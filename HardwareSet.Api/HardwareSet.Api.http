@@ -1,0 +1,21 @@
+@HardwareSet.Api_HostAddress = http://localhost:5000
+
+### Get all products
+GET {{HardwareSet.Api_HostAddress}}/api/products
+Accept: application/json
+
+### Create a new hardware product
+POST {{HardwareSet.Api_HostAddress}}/api/products
+Content-Type: application/json
+
+{
+  "name": "AMD Ryzen 7 7800X3D",
+  "price": 2899.90,
+  "specifications": {
+    "category": "CPU",
+    "socket": "AM5",
+    "cores": 8,
+    "threads": 16,
+    "tdpWatts": 120
+  }
+}
