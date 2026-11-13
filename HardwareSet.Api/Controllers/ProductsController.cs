@@ -17,15 +17,16 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<Product>>> GetAll(
+        [FromQuery] string? category,
+        CancellationToken cancellationToken)
     {
-        var products = await _productService.GetAllAsync(cancellationToken);
-        return Ok(products);
-    }
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            var filtered = await _productService.GetByCategoryAsync(category, cancellationToken);
+            return Ok(filtered);
+        }
 
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetByField(CancellationToken cancellationToken)
-    {
         var products = await _productService.GetAllAsync(cancellationToken);
         return Ok(products);
     }
@@ -35,7 +36,7 @@ public class ProductsController : ControllerBase
     {
         if (!ObjectId.TryParse(id, out _))
         {
-            return BadRequest("Invalid Id format.");
+            return BadRequest("Formato de Id inválido.");
         }
 
         var product = await _productService.GetByIdAsync(id, cancellationToken);
@@ -48,19 +49,33 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Product>> Create([FromBody] Product product, CancellationToken cancellationToken)
+    public async Task<ActionResult<Product>> Create(
+        [FromBody] Product product,
+        CancellationToken cancellationToken)
     {
-        product.Id = null;
+        if (string.IsNullOrWhiteSpace(product.Name))
+        {
+            return BadRequest("O nome do produto é obrigatório.");
+        }
+
+        if (product.Price < 0)
+        {
+            return BadRequest("O valor do produto não pode ser negativo.");
+        }
+
         var created = await _productService.CreateAsync(product, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:length(24)}")]
-    public async Task<IActionResult> Update(string id, [FromBody] Product product, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(
+        string id,
+        [FromBody] Product product,
+        CancellationToken cancellationToken)
     {
         if (!ObjectId.TryParse(id, out _))
         {
-            return BadRequest("Invalid Id format.");
+            return BadRequest("Formato de Id inválido.");
         }
 
         var existing = await _productService.GetByIdAsync(id, cancellationToken);
@@ -78,7 +93,7 @@ public class ProductsController : ControllerBase
     {
         if (!ObjectId.TryParse(id, out _))
         {
-            return BadRequest("Invalid Id format.");
+            return BadRequest("Formato de Id inválido.");
         }
 
         var deleted = await _productService.DeleteAsync(id, cancellationToken);

@@ -14,14 +14,14 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
-// Configure Controllers and JSON Serialization for BsonDocument
+// Configure Controllers and JSON Serialization
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new BsonDocumentJsonConverter());
     });
 
-// Configure CORS for future React front-end integration
+// Configure CORS for React front-end integration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactAppPolicy", policy =>
@@ -40,8 +40,6 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.UseHttpsRedirection();
 
 app.UseCors("ReactAppPolicy");
 

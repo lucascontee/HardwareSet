@@ -14,38 +14,47 @@ export function Footer({ onNavigate }: FooterProps) {
             <h2 className="h2-display measure mb-4">
               Monte seu computador peça por peça.{' '}
               <span className="text-[var(--muted)]">
-                Orçamento calculado na hora, sem peças incompatíveis.
+                Catálogo integrado diretamente ao banco de dados MongoDB.
               </span>
             </h2>
             <p className="t-body-copy m-0">
-              Inicie do zero ou personalize qualquer uma das três estações
-              pré-configuradas.
+              Cadastre novas peças no catálogo ou inicie a montagem do seu
+              computador agora.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onNavigate('builder')}
-            className="btn btn--primary self-start lg:self-auto"
-          >
-            <span>Criar computador</span>
-            <svg
-              className="m-arrow"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden="true"
+          <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+            <button
+              type="button"
+              onClick={() => onNavigate('create')}
+              className="btn btn--secondary"
             >
-              <path
-                d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+              <span>Cadastrar nova peça</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('builder')}
+              className="btn btn--primary"
+            >
+              <span>Criar computador</span>
+              <svg
+                className="m-arrow"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Row 2: Directory & Legal Row (system.md Footer) */}
@@ -83,8 +92,8 @@ export function Footer({ onNavigate }: FooterProps) {
                 </span>
               </div>
               <p className="t-body-copy measure m-0">
-                Configurador de hardware e estações de trabalho de alto
-                desempenho.
+                Configurador de hardware e estações de trabalho com persistência
+                NoSQL em MongoDB.
               </p>
             </div>
 
@@ -121,6 +130,15 @@ export function Footer({ onNavigate }: FooterProps) {
                 <li>
                   <button
                     type="button"
+                    onClick={() => onNavigate('create')}
+                    className="nav-link !min-h-[32px] !p-0"
+                  >
+                    Cadastrar peça
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
                     onClick={() => onNavigate('builder')}
                     className="nav-link !min-h-[32px] !p-0"
                   >
@@ -131,15 +149,15 @@ export function Footer({ onNavigate }: FooterProps) {
             </div>
 
             <div className="col-span-6 md:col-span-4">
-              <h3 className="t-label-meta m-0 mb-3">Componentes homologados</h3>
+              <h3 className="t-label-meta m-0 mb-3">Integração Backend</h3>
               <p className="t-body-copy m-0 text-[15px]">
-                AMD Ryzen · NVIDIA GeForce · AMD Radeon · ASUS ROG Strix ·
-                Gigabyte Aorus · HyperX · WD Black · Corsair
+                ASP.NET Core Web API (.NET 10) · MongoDB.Driver · Coleção
+                CatalogoDb.Products
               </p>
             </div>
           </div>
 
-          {/* Single Footer Credit Line (SKILL.md House Rule 1 & copy.md Credits) */}
+          {/* Single Footer Credit Line */}
           <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[13px] text-[var(--muted)]">
             <span>© 2026 HardwareSet. Todos os direitos reservados.</span>
             <span>

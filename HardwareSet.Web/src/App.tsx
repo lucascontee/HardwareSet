@@ -1,20 +1,51 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   BuildSelection,
+  CreateProductInput,
   HardwareCategory,
   HardwareProduct,
   PrebuiltSetup,
 } from './types/hardware';
-import { SLOT_DEFINITIONS, getProductById } from './data/hardwareCatalog';
+import { SLOT_DEFINITIONS } from './data/hardwareCatalog';
+import {
+  createProductInDb,
+  deleteProductFromDb,
+  fetchAllProducts,
+} from './services/productApi';
 import { Navbar, type ActiveView } from './components/Navbar';
 import { FeedView } from './components/FeedView';
 import { BuilderView } from './components/BuilderView';
+import { CreateItemView } from './components/CreateItemView';
 import { Footer } from './components/Footer';
 
 export function App() {
   const [activeView, setActiveView] = useState<ActiveView>('feed');
   const [activeCategory, setActiveCategory] = useState<HardwareCategory>('cpu');
+  const [products, setProducts] = useState<HardwareProduct[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [selection, setSelection] = useState<BuildSelection>({});
+
+  const loadCatalog = useCallback(async () => {
+    setIsLoading(true);
+    setApiError(null);
+    try {
+      const items = await fetchAllProducts();
+      setProducts(items);
+    } catch (err) {
+      setApiError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível conectar à API HardwareSet.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
 
   const { selectedCount, totalPrice } = useMemo(() => {
     const items = Object.values(selection).filter(
@@ -56,14 +87,7 @@ export function App() {
   };
 
   const handleLoadPrebuiltSetup = (setup: PrebuiltSetup) => {
-    const hydrated: BuildSelection = {};
-    (Object.keys(setup.parts) as HardwareCategory[]).forEach((category) => {
-      const product = getProductById(setup.parts[category]);
-      if (product) {
-        hydrated[category] = product;
-      }
-    });
-    setSelection(hydrated);
+    setSelection({ ...setup.parts });
     setActiveCategory('gpu');
     setActiveView('builder');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -106,6 +130,28 @@ export function App() {
     setActiveCategory('cpu');
   };
 
+  const handleCreateProduct = async (
+    input: CreateProductInput
+  ): Promise<HardwareProduct> => {
+    const created = await createProductInDb(input);
+    setProducts((prev) => [created, ...prev]);
+    return created;
+  };
+
+  const handleDeleteProduct = async (id: string): Promise<void> => {
+    await deleteProductFromDb(id);
+    setProducts((prev) => prev.filter((item) => item.id !== id));
+    setSelection((prev) => {
+      const next = { ...prev };
+      (Object.keys(next) as HardwareCategory[]).forEach((cat) => {
+        if (next[cat]?.id === id) {
+          delete next[cat];
+        }
+      });
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--g-main)] text-[var(--ink)]">
       <Navbar
@@ -114,17 +160,25 @@ export function App() {
         selectedCount={selectedCount}
         totalSpots={SLOT_DEFINITIONS.length}
         totalPrice={totalPrice}
+        catalogCount={products.length}
       />
 
       <main id="top" className="flex-1">
-        {activeView === 'feed' ? (
+        {activeView === 'feed' && (
           <FeedView
+            products={products}
+            isLoading={isLoading}
+            error={apiError}
             onStartEmptyBuilder={handleStartEmptyBuilder}
+            onOpenCreateItem={() => handleNavigate('create')}
             onLoadPrebuiltSetup={handleLoadPrebuiltSetup}
             onSelectSinglePartAndBuild={handleSelectSinglePartAndBuild}
           />
-        ) : (
+        )}
+
+        {activeView === 'builder' && (
           <BuilderView
+            products={products}
             selection={selection}
             activeCategory={activeCategory}
             onChangeCategory={setActiveCategory}
@@ -132,6 +186,17 @@ export function App() {
             onRemovePart={handleRemovePart}
             onClearBuild={handleClearBuild}
             onLoadPrebuilt={handleLoadPrebuiltSetup}
+            onOpenCreateItem={() => handleNavigate('create')}
+            onBackToFeed={() => handleNavigate('feed', 'top')}
+          />
+        )}
+
+        {activeView === 'create' && (
+          <CreateItemView
+            products={products}
+            onCreateProduct={handleCreateProduct}
+            onDeleteProduct={handleDeleteProduct}
+            onSelectPartAndBuild={handleSelectSinglePartAndBuild}
             onBackToFeed={() => handleNavigate('feed', 'top')}
           />
         )}

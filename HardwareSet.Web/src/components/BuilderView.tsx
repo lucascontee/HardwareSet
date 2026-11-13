@@ -8,6 +8,7 @@ import {
   HardDrive,
   Layers,
   Monitor,
+  Plus,
   RotateCcw,
   Trash2,
   Zap,
@@ -19,14 +20,14 @@ import type {
   PrebuiltSetup,
 } from '../types/hardware';
 import {
-  PREBUILT_SETUPS,
   SLOT_DEFINITIONS,
+  buildDynamicSetupsFromCatalog,
   formatBRL,
-  getProductsByCategory,
 } from '../data/hardwareCatalog';
 import { AnimatedPrice } from './AnimatedPrice';
 
 interface BuilderViewProps {
+  products: HardwareProduct[];
   selection: BuildSelection;
   activeCategory: HardwareCategory;
   onChangeCategory: (category: HardwareCategory) => void;
@@ -34,6 +35,7 @@ interface BuilderViewProps {
   onRemovePart: (category: HardwareCategory) => void;
   onClearBuild: () => void;
   onLoadPrebuilt: (setup: PrebuiltSetup) => void;
+  onOpenCreateItem: () => void;
   onBackToFeed: () => void;
 }
 
@@ -57,6 +59,7 @@ function getCategoryIcon(category: HardwareCategory) {
 }
 
 export function BuilderView({
+  products,
   selection,
   activeCategory,
   onChangeCategory,
@@ -64,6 +67,7 @@ export function BuilderView({
   onRemovePart,
   onClearBuild,
   onLoadPrebuilt,
+  onOpenCreateItem,
   onBackToFeed,
 }: BuilderViewProps) {
   const [autoAdvance, setAutoAdvance] = useState(true);
@@ -74,7 +78,11 @@ export function BuilderView({
     (s) => s.category === activeCategory
   );
   const currentSlot = SLOT_DEFINITIONS[currentSlotIndex] || SLOT_DEFINITIONS[0];
-  const availableProducts = getProductsByCategory(currentSlot.category);
+  const availableProducts = products.filter(
+    (p) => p.category === currentSlot.category
+  );
+
+  const dynamicSetups = buildDynamicSetupsFromCatalog(products);
 
   const selectedList = SLOT_DEFINITIONS.map((slot) => ({
     slot,
@@ -95,14 +103,13 @@ export function BuilderView({
     0
   );
 
-  const psuCapacity = selection.psu ? 650 : 650;
+  const psuCapacity = 650;
 
   const handleChooseProduct = (product: HardwareProduct) => {
     setOrderSubmitted(false);
     onSelectPart(product);
 
     if (autoAdvance) {
-      // Find next empty slot after current, or any empty slot
       const nextEmptyAfter = SLOT_DEFINITIONS.slice(currentSlotIndex + 1).find(
         (s) => !selection[s.category] && s.category !== product.category
       );
@@ -151,15 +158,13 @@ export function BuilderView({
             <h1 id="builder-heading" className="h2-display">
               Criador de computador.{' '}
               <span className="text-[var(--muted)]">
-                Selecione cada slot e acompanhe o orçamento em tempo real.
+                Selecione cada slot com peças carregadas do MongoDB.
               </span>
             </h1>
           </div>
 
-          {/* Preset Quick-Loaders */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="t-label-meta mr-1">Preencher com base:</span>
-            {PREBUILT_SETUPS.map((setup) => (
+            {dynamicSetups.map((setup) => (
               <button
                 key={setup.id}
                 type="button"
@@ -172,6 +177,15 @@ export function BuilderView({
                 {setup.name.replace('Estação ', '')}
               </button>
             ))}
+
+            <button
+              type="button"
+              onClick={onOpenCreateItem}
+              className="btn btn--secondary !min-h-[40px] !px-3.5 !text-[13px]"
+            >
+              <Plus size={14} aria-hidden="true" />
+              <span>Cadastrar nova peça</span>
+            </button>
           </div>
         </div>
 
@@ -267,7 +281,6 @@ export function BuilderView({
         <div className="grid-12 items-start">
           {/* LEFT 8 COLUMNS: Active Step Component Selector */}
           <div className="col-span-12 lg:col-span-8">
-            {/* Step Controls Header */}
             <div className="hw-card p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2.5 mb-1">
@@ -277,8 +290,8 @@ export function BuilderView({
                   <span className="t-label-meta">
                     {availableProducts.length}{' '}
                     {availableProducts.length === 1
-                      ? 'opção disponível'
-                      : 'opções disponíveis'}
+                      ? 'opção no banco'
+                      : 'opções no banco'}
                   </span>
                 </div>
                 <h2 className="h3-display m-0">{currentSlot.label}</h2>
@@ -309,7 +322,6 @@ export function BuilderView({
               </div>
             </div>
 
-            {/* Animated Step Content (Framer Motion AnimatePresence) */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlot.category}
@@ -317,129 +329,148 @@ export function BuilderView({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.24, ease: EASE_UI }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
               >
-                {availableProducts.map((product) => {
-                  const isSelected =
-                    selection[currentSlot.category]?.id === product.id;
-
-                  return (
-                    <article
-                      key={product.id}
-                      className={`hw-card hw-card--interactive p-2 flex flex-col justify-between ${
-                        isSelected
-                          ? '!border-[var(--action)] !bg-[var(--card-hover)]'
-                          : ''
-                      }`}
+                {availableProducts.length === 0 ? (
+                  <div className="hw-card p-10 text-center">
+                    <h3 className="t-card-title m-0 mb-2">
+                      Nenhuma peça cadastrada para {currentSlot.shortLabel}
+                    </h3>
+                    <p className="t-body-copy m-0 mb-6">
+                      Adicione um item desta categoria ao MongoDB para
+                      selecioná-lo neste slot.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onOpenCreateItem}
+                      className="btn btn--primary"
                     >
-                      <div>
-                        {/* Lit Studio Hardware Stage */}
-                        <div className="hw-stage h-[230px] p-6 flex items-center justify-center relative">
-                          {isSelected && (
-                            <span className="absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-[6px] bg-[var(--action)] text-[var(--action-ink)] text-[13px] font-medium">
-                              <Check size={14} aria-hidden="true" />
-                              <span>Instalado no slot</span>
-                            </span>
-                          )}
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            width={320}
-                            height={220}
-                            className="hw-stage__img max-h-[175px] w-full object-contain"
-                          />
-                        </div>
+                      <Plus size={16} aria-hidden="true" />
+                      <span>Cadastrar {currentSlot.shortLabel}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {availableProducts.map((product) => {
+                      const isSelected =
+                        selection[currentSlot.category]?.id === product.id;
 
-                        {/* Product Info & Ruled Specifications */}
-                        <div className="p-6 pb-4">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                            <div>
-                              <p className="t-label-meta m-0 mb-1">
-                                {product.categoryLabel}
-                              </p>
-                              <h3 className="t-card-title m-0">
-                                {product.name}
-                              </h3>
-                            </div>
-                            <span className="text-[22px] font-medium font-mono text-[var(--ink)] tabular-price shrink-0">
-                              {formatBRL(product.price)}
-                            </span>
-                          </div>
-
-                          <p className="t-body-copy m-0 mb-5">
-                            {product.summarySpec}
-                          </p>
-
-                          <ul className="spec-rows border-t border-[var(--border)]">
-                            {product.specs.map((spec) => (
-                              <li key={spec.label}>
-                                <span className="text-[var(--muted)]">
-                                  {spec.label}
-                                </span>
-                                <span className="text-[var(--c-text)] font-medium text-right">
-                                  {spec.value}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-
-                      {/* Card Action Bar */}
-                      <div className="p-6 pt-2 flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleChooseProduct(product)}
-                          className={`btn w-full ${
-                            isSelected ? 'btn--secondary' : 'btn--primary'
+                      return (
+                        <article
+                          key={product.id}
+                          className={`hw-card hw-card--interactive p-2 flex flex-col justify-between ${
+                            isSelected
+                              ? '!border-[var(--action)] !bg-[var(--card-hover)]'
+                              : ''
                           }`}
                         >
-                          {isSelected ? (
-                            <>
-                              <Check size={16} aria-hidden="true" />
-                              <span>Peça selecionada</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>Selecionar peça</span>
-                              <svg
-                                className="m-arrow"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </>
-                          )}
-                        </button>
+                          <div>
+                            <div className="hw-stage h-[230px] p-6 flex items-center justify-center relative">
+                              {isSelected && (
+                                <span className="absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-[6px] bg-[var(--action)] text-[var(--action-ink)] text-[13px] font-medium">
+                                  <Check size={14} aria-hidden="true" />
+                                  <span>Instalado no slot</span>
+                                </span>
+                              )}
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                width={320}
+                                height={220}
+                                className="hw-stage__img max-h-[175px] w-full object-contain"
+                              />
+                            </div>
 
-                        {isSelected && (
-                          <button
-                            type="button"
-                            onClick={() => onRemovePart(product.category)}
-                            aria-label={`Remover ${product.name} da montagem`}
-                            className="btn btn--secondary !px-3.5 shrink-0"
-                          >
-                            <Trash2 size={16} aria-hidden="true" />
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
+                            <div className="p-6 pb-4">
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <div>
+                                  <p className="t-label-meta m-0 mb-1">
+                                    {product.categoryLabel}
+                                  </p>
+                                  <h3 className="t-card-title m-0">
+                                    {product.name}
+                                  </h3>
+                                </div>
+                                <span className="text-[22px] font-medium font-mono text-[var(--ink)] tabular-price shrink-0">
+                                  {formatBRL(product.price)}
+                                </span>
+                              </div>
+
+                              <p className="t-body-copy m-0 mb-5">
+                                {product.summarySpec}
+                              </p>
+
+                              {product.specs.length > 0 && (
+                                <ul className="spec-rows border-t border-[var(--border)]">
+                                  {product.specs.map((spec) => (
+                                    <li key={spec.label}>
+                                      <span className="text-[var(--muted)]">
+                                        {spec.label}
+                                      </span>
+                                      <span className="text-[var(--c-text)] font-medium text-right">
+                                        {spec.value}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="p-6 pt-2 flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleChooseProduct(product)}
+                              className={`btn w-full ${
+                                isSelected ? 'btn--secondary' : 'btn--primary'
+                              }`}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <Check size={16} aria-hidden="true" />
+                                  <span>Peça selecionada</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>Selecionar peça</span>
+                                  <svg
+                                    className="m-arrow"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </>
+                              )}
+                            </button>
+
+                            {isSelected && (
+                              <button
+                                type="button"
+                                onClick={() => onRemovePart(product.category)}
+                                aria-label={`Remover ${product.name} da montagem`}
+                                className="btn btn--secondary !px-3.5 shrink-0"
+                              >
+                                <Trash2 size={16} aria-hidden="true" />
+                              </button>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             </AnimatePresence>
 
-            {/* Auto-advance preference bar */}
             <div className="mt-6 flex items-center justify-between gap-4 px-1">
               <label className="inline-flex items-center gap-2.5 text-[14px] text-[var(--c-text)] cursor-pointer select-none">
                 <input
@@ -462,7 +493,6 @@ export function BuilderView({
             className="col-span-12 lg:col-span-4 hw-card p-6 flex flex-col justify-between"
           >
             <div>
-              {/* Summary Header */}
               <div className="flex items-center justify-between gap-4 pb-5 border-b border-[var(--border)]">
                 <div>
                   <h2 className="t-card-title m-0">Resumo do Setup</h2>
@@ -486,7 +516,6 @@ export function BuilderView({
                 )}
               </div>
 
-              {/* Power / Wattage Meter */}
               <div className="py-4 border-b border-[var(--border)]">
                 <div className="flex items-center justify-between text-[13px] mb-2">
                   <span className="text-[var(--muted)]">
@@ -509,7 +538,6 @@ export function BuilderView({
                 </div>
               </div>
 
-              {/* Slot-by-Slot Itemized List */}
               <ul className="list-none m-0 p-0 divide-y divide-[var(--border)]">
                 {selectedList.map(({ slot, product }) => {
                   const isCurrentSlot = slot.category === activeCategory;
@@ -587,7 +615,6 @@ export function BuilderView({
               </ul>
             </div>
 
-            {/* Reactive Total Footer */}
             <div className="pt-6 mt-2 border-t border-[var(--border)]">
               <div className="flex items-baseline justify-between gap-4 mb-2">
                 <span className="text-[16px] text-[var(--c-text)]">
@@ -635,7 +662,6 @@ export function BuilderView({
                 </svg>
               </button>
 
-              {/* Inline Confirmation Status (system.md Forms: no popup modal, inline role="status") */}
               {orderSubmitted && filledCount > 0 && (
                 <div
                   role="status"
@@ -645,8 +671,8 @@ export function BuilderView({
                     Configuração registrada ({filledCount}/{totalSlots} peças).
                   </p>
                   <p className="m-0 text-[13px] text-[var(--c-text)] tabular-price">
-                    Orçamento total de {formatBRL(totalPrice)} pronto para
-                    integração com a API HardwareSet.
+                    Orçamento total de {formatBRL(totalPrice)} validado com os
+                    itens do MongoDB.
                   </p>
                 </div>
               )}

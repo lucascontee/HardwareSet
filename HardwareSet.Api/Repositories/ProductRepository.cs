@@ -17,6 +17,14 @@ public class ProductRepository : IProductRepository
     {
         return await _products
             .Find(_ => true)
+            .SortByDescending(p => p.PurchaseDate)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Product>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default)
+    {
+        return await _products
+            .Find(p => p.Category.ToLower() == category.ToLower())
             .ToListAsync(cancellationToken);
     }
 

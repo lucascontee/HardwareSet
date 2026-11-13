@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, Plus, X } from 'lucide-react';
 import { AnimatedPrice } from './AnimatedPrice';
 
-export type ActiveView = 'feed' | 'builder';
+export type ActiveView = 'feed' | 'builder' | 'create';
 
 interface NavbarProps {
   activeView: ActiveView;
@@ -10,6 +10,7 @@ interface NavbarProps {
   selectedCount: number;
   totalSpots: number;
   totalPrice: number;
+  catalogCount: number;
 }
 
 export function Navbar({
@@ -18,6 +19,7 @@ export function Navbar({
   selectedCount,
   totalSpots,
   totalPrice,
+  catalogCount,
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -73,7 +75,7 @@ export function Navbar({
             </span>
           </a>
 
-          {/* Navigation words (4 plain nouns, 15px/500, never wrap) */}
+          {/* Navigation words (plain nouns, 15px/500, never wrap) */}
           <nav
             aria-label="Navegação principal"
             className="hidden md:flex items-center gap-6"
@@ -98,7 +100,7 @@ export function Navbar({
               onClick={() => handleNavClick('feed', 'catalogo')}
               className="nav-link"
             >
-              Catálogo
+              Catálogo ({catalogCount})
             </button>
             <button
               type="button"
@@ -108,16 +110,24 @@ export function Navbar({
             >
               Montador
             </button>
+            <button
+              type="button"
+              onClick={() => handleNavClick('create')}
+              aria-current={activeView === 'create' ? 'page' : undefined}
+              className="nav-link"
+            >
+              Cadastrar peça
+            </button>
           </nav>
         </div>
 
-        {/* Right line: Live Build Status + Main CTA Button */}
+        {/* Right line: Live Build Status + Actions */}
         <div className="flex items-center gap-3">
           {selectedCount > 0 && (
             <button
               type="button"
               onClick={() => handleNavClick('builder')}
-              className="hidden sm:inline-flex items-center gap-2.5 min-h-[44px] px-3.5 rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[14px] text-[var(--c-text)] cursor-pointer hover:border-[var(--border-strong)] transition-colors"
+              className="hidden lg:inline-flex items-center gap-2.5 min-h-[44px] px-3.5 rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[14px] text-[var(--c-text)] cursor-pointer hover:border-[var(--border-strong)] transition-colors"
               aria-label={`Ver montagem atual com ${selectedCount} de ${totalSpots} peças`}
             >
               <span className="inline-block w-2 h-2 rounded-full bg-[var(--action)]" />
@@ -133,6 +143,15 @@ export function Navbar({
               />
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => handleNavClick('create')}
+            className="btn btn--secondary hidden sm:inline-flex !px-4"
+          >
+            <Plus size={16} aria-hidden="true" />
+            <span>Adicionar item</span>
+          </button>
 
           <button
             type="button"
@@ -158,13 +177,17 @@ export function Navbar({
             </svg>
           </button>
 
-          {/* Mobile Menu Toggle (44x44 secondary look as required by system.md) */}
+          {/* Mobile Menu Toggle */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-nav-sheet"
-            aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+            aria-label={
+              mobileMenuOpen
+                ? 'Fechar menu de navegação'
+                : 'Abrir menu de navegação'
+            }
             className="btn btn--secondary !px-0 w-[44px] h-[44px] md:hidden"
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -172,7 +195,7 @@ export function Navbar({
         </div>
       </div>
 
-      {/* Full-screen mobile sheet under 768px (system.md Nav: 56px rows, closes on any tap) */}
+      {/* Full-screen mobile sheet under 768px */}
       {mobileMenuOpen && (
         <div
           id="mobile-nav-sheet"
@@ -201,7 +224,17 @@ export function Navbar({
               onClick={() => handleNavClick('feed', 'catalogo')}
               className="h-[56px] flex items-center justify-between text-left text-[18px] font-medium text-[var(--ink)] bg-transparent border-0"
             >
-              <span>Catálogo de peças</span>
+              <span>Catálogo de peças ({catalogCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleNavClick('create')}
+              className="h-[56px] flex items-center justify-between text-left text-[18px] font-medium text-[var(--ink)] bg-transparent border-0"
+            >
+              <span>Cadastrar peça no MongoDB</span>
+              {activeView === 'create' && (
+                <span className="t-label-meta">Atual</span>
+              )}
             </button>
             <button
               type="button"
@@ -215,7 +248,7 @@ export function Navbar({
             </button>
           </div>
 
-          <div className="pt-6 border-t border-[var(--border)] flex flex-col gap-4">
+          <div className="pt-6 border-t border-[var(--border)] flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="t-label-meta">Orçamento em montagem</span>
               <AnimatedPrice
@@ -225,26 +258,18 @@ export function Navbar({
             </div>
             <button
               type="button"
+              onClick={() => handleNavClick('create')}
+              className="btn btn--secondary w-full"
+            >
+              <Plus size={16} aria-hidden="true" />
+              <span>Adicionar item</span>
+            </button>
+            <button
+              type="button"
               onClick={() => handleNavClick('builder')}
               className="btn btn--primary w-full"
             >
               <span>Criar computador</span>
-              <svg
-                className="m-arrow"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
             </button>
           </div>
         </div>
