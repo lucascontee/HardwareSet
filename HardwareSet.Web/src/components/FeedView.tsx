@@ -58,7 +58,7 @@ export function FeedView({
 
   return (
     <div>
-      {/* SECTION 1: HERO (100svh, split composition, layout-v4.md) */}
+      {/* SECTION 1: HERO (100svh, split composition) */}
       <section
         className="hero-screen border-b border-[var(--border)]"
         aria-labelledby="hero-heading"
@@ -74,10 +74,7 @@ export function FeedView({
                   transition={{ duration: 0.52, ease: EASE_ENTER }}
                   className="text-[14px] text-[var(--muted)] tabular-price mb-4"
                 >
-                  6 etapas de montagem · {products.length}{' '}
-                  {products.length === 1
-                    ? 'peça registrada no MongoDB'
-                    : 'peças registradas no MongoDB'}
+                  6 etapas de montagem · Orçamento atualizado em tempo real
                 </motion.p>
 
                 <h1 id="hero-heading" className="h1-display mb-6">
@@ -114,8 +111,8 @@ export function FeedView({
                   className="t-body-copy text-[18px] leading-[28px] measure mb-8"
                 >
                   Selecione processador, placa-mãe, placa de vídeo, memória,
-                  armazenamento e fonte a partir do catálogo gravado no MongoDB
-                  com soma imediata do orçamento.
+                  armazenamento e fonte em um painel interativo com soma
+                  imediata do valor total.
                 </motion.p>
 
                 <motion.div
@@ -154,7 +151,7 @@ export function FeedView({
                     className="btn btn--secondary"
                   >
                     <Plus size={16} aria-hidden="true" />
-                    <span>Cadastrar peça</span>
+                    <span>Cadastrar Item</span>
                   </button>
                 </motion.div>
               </div>
@@ -167,21 +164,21 @@ export function FeedView({
                 className="grid grid-cols-3 gap-4 pt-6 border-t border-[var(--border)] m-0"
               >
                 <div>
-                  <dt className="t-label-meta mb-1">Banco NoSQL</dt>
+                  <dt className="t-label-meta mb-1">Catálogo</dt>
                   <dd className="m-0 text-[16px] font-medium text-[var(--ink)] tabular-price">
                     {products.length} itens
                   </dd>
                 </div>
                 <div>
-                  <dt className="t-label-meta mb-1">Slots</dt>
-                  <dd className="m-0 text-[16px] font-medium text-[var(--ink)] tabular-price">
-                    6 categorias
+                  <dt className="t-label-meta mb-1">Arquitetura</dt>
+                  <dd className="m-0 text-[16px] font-medium text-[var(--ink)]">
+                    AM4 & PCIe 5.0
                   </dd>
                 </div>
                 <div>
-                  <dt className="t-label-meta mb-1">Persistência</dt>
-                  <dd className="m-0 text-[16px] font-medium text-[var(--ink)]">
-                    MongoDB Driver
+                  <dt className="t-label-meta mb-1">Alimentação</dt>
+                  <dd className="m-0 text-[16px] font-medium text-[var(--ink)] tabular-price">
+                    650&nbsp;W 80 Plus
                   </dd>
                 </div>
               </motion.dl>
@@ -195,19 +192,17 @@ export function FeedView({
               className="col-span-12 lg:col-span-7 relative"
             >
               <div className="hw-stage min-h-[380px] sm:min-h-[480px] lg:min-h-[540px] p-6 sm:p-10 flex flex-col justify-between border border-[var(--border)]">
-                {/* Top technical header inside the stage */}
                 <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
                   <span className="t-label-meta">
                     {heroGpu
-                      ? `Destaque do banco · ${heroGpu.name}`
-                      : 'Catálogo conectado ao MongoDB'}
+                      ? `Composição em destaque · ${heroGpu.name}`
+                      : 'Composição de hardware'}
                   </span>
                   <span className="font-mono text-[13px] text-[var(--c-text)] tabular-price">
-                    {products.length} peças ativas
+                    650&nbsp;W 80 Plus
                   </span>
                 </div>
 
-                {/* Hardware Transparent Cutouts Stage */}
                 {heroGpu ? (
                   <div className="relative my-auto py-6 grid grid-cols-12 items-center gap-4">
                     <div className="col-span-12 sm:col-span-7 flex items-center justify-center">
@@ -245,12 +240,12 @@ export function FeedView({
                   <div className="my-auto py-12 text-center">
                     <p className="t-card-title mb-2">
                       {isLoading
-                        ? 'Carregando peças do MongoDB...'
+                        ? 'Carregando catálogo de peças...'
                         : 'Nenhuma peça cadastrada ainda'}
                     </p>
                     <p className="t-body-copy mb-6">
-                      Adicione o primeiro item para visualizá-lo no palco e no
-                      montador de computadores.
+                      Adicione um item ao catálogo para visualizá-lo no palco e
+                      no montador de computadores.
                     </p>
                     <button
                       type="button"
@@ -258,12 +253,11 @@ export function FeedView({
                       className="btn btn--primary"
                     >
                       <Plus size={16} aria-hidden="true" />
-                      <span>Cadastrar primeira peça</span>
+                      <span>Cadastrar Item</span>
                     </button>
                   </div>
                 )}
 
-                {/* Single Opaque Float Card on Lower Left */}
                 {featuredSetup ? (
                   <div className="bg-[var(--card)] border border-[var(--border-strong)] rounded-[12px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
@@ -306,7 +300,7 @@ export function FeedView({
                   <div className="bg-[var(--card)] border border-[var(--border)] rounded-[12px] p-4 flex items-center justify-between gap-4">
                     <span className="text-[14px] text-[var(--muted)]">
                       {error ||
-                        'Cadastre componentes para gerar combinações automáticas.'}
+                        'Cadastre componentes para visualizar combinações recomendadas.'}
                     </span>
                     <button
                       type="button"
@@ -334,7 +328,7 @@ export function FeedView({
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
               <div>
                 <h2 id="setups-heading" className="h2-display measure">
-                  Setups montados com peças do banco.{' '}
+                  Setups prontos para montar.{' '}
                   <span className="text-[var(--muted)]">
                     Carregue uma configuração completa ou edite cada slot.
                   </span>
@@ -488,7 +482,7 @@ export function FeedView({
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
             <div>
               <h2 id="catalog-heading" className="h2-display measure">
-                Catálogo de peças no MongoDB.{' '}
+                Catálogo de peças disponíveis.{' '}
                 <span className="text-[var(--muted)]">
                   Adicione novos itens ou selecione uma peça para o seu
                   computador.
@@ -513,7 +507,7 @@ export function FeedView({
                       : 'bg-[var(--card)] text-[var(--c-text)] border-[var(--border)] hover:border-[var(--border-strong)]'
                   }`}
                 >
-                  Todas ({products.length})
+                  Todas
                 </button>
                 {SLOT_DEFINITIONS.map((slot) => (
                   <button
@@ -539,7 +533,7 @@ export function FeedView({
                 className="btn btn--primary"
               >
                 <Plus size={16} aria-hidden="true" />
-                <span>Novo item</span>
+                <span>Cadastrar Item</span>
               </button>
             </div>
           </div>
@@ -550,8 +544,8 @@ export function FeedView({
                 Nenhum componente encontrado nesta categoria
               </h3>
               <p className="t-body-copy m-0 mb-6">
-                Cadastre um novo item para gravá-lo diretamente no MongoDB e
-                disponibilizá-lo para montagem.
+                Cadastre um novo item para disponibilizá-lo na vitrine e no
+                montador de computadores.
               </p>
               <button
                 type="button"
@@ -559,7 +553,7 @@ export function FeedView({
                 className="btn btn--primary"
               >
                 <Plus size={16} aria-hidden="true" />
-                <span>Cadastrar peça agora</span>
+                <span>Cadastrar Item</span>
               </button>
             </div>
           ) : (

@@ -17,7 +17,7 @@ export async function fetchAllProducts(): Promise<HardwareProduct[]> {
   });
 
   if (!response.ok) {
-    throw new Error(`Falha ao carregar produtos (HTTP ${response.status}).`);
+    throw new Error('Não foi possível carregar o catálogo de peças.');
   }
 
   const data: ApiProduct[] = await response.json();
@@ -50,9 +50,7 @@ export async function createProductInDb(
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => '');
-    throw new Error(
-      errorText || `Não foi possível salvar o produto (HTTP ${response.status}).`
-    );
+    throw new Error(errorText || 'Não foi possível cadastrar o item.');
   }
 
   const created: ApiProduct = await response.json();
@@ -65,6 +63,6 @@ export async function deleteProductFromDb(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Não foi possível remover o item (HTTP ${response.status}).`);
+    throw new Error('Não foi possível remover o item.');
   }
 }

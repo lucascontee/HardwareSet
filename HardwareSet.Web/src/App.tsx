@@ -9,7 +9,6 @@ import type {
 import { SLOT_DEFINITIONS } from './data/hardwareCatalog';
 import {
   createProductInDb,
-  deleteProductFromDb,
   fetchAllProducts,
 } from './services/productApi';
 import { Navbar, type ActiveView } from './components/Navbar';
@@ -32,12 +31,8 @@ export function App() {
     try {
       const items = await fetchAllProducts();
       setProducts(items);
-    } catch (err) {
-      setApiError(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível conectar à API HardwareSet.'
-      );
+    } catch {
+      setApiError('Não foi possível carregar o catálogo no momento.');
     } finally {
       setIsLoading(false);
     }
@@ -47,15 +42,11 @@ export function App() {
     void loadCatalog();
   }, [loadCatalog]);
 
-  const { selectedCount, totalPrice } = useMemo(() => {
+  const totalPrice = useMemo(() => {
     const items = Object.values(selection).filter(
       (item): item is HardwareProduct => Boolean(item)
     );
-    const total = items.reduce((sum, item) => sum + item.price, 0);
-    return {
-      selectedCount: items.length,
-      totalPrice: total,
-    };
+    return items.reduce((sum, item) => sum + item.price, 0);
   }, [selection]);
 
   const handleNavigate = (view: ActiveView, sectionId?: string) => {
@@ -138,29 +129,12 @@ export function App() {
     return created;
   };
 
-  const handleDeleteProduct = async (id: string): Promise<void> => {
-    await deleteProductFromDb(id);
-    setProducts((prev) => prev.filter((item) => item.id !== id));
-    setSelection((prev) => {
-      const next = { ...prev };
-      (Object.keys(next) as HardwareCategory[]).forEach((cat) => {
-        if (next[cat]?.id === id) {
-          delete next[cat];
-        }
-      });
-      return next;
-    });
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-[var(--g-main)] text-[var(--ink)]">
       <Navbar
         activeView={activeView}
         onNavigate={handleNavigate}
-        selectedCount={selectedCount}
-        totalSpots={SLOT_DEFINITIONS.length}
         totalPrice={totalPrice}
-        catalogCount={products.length}
       />
 
       <main id="top" className="flex-1">
@@ -193,10 +167,7 @@ export function App() {
 
         {activeView === 'create' && (
           <CreateItemView
-            products={products}
             onCreateProduct={handleCreateProduct}
-            onDeleteProduct={handleDeleteProduct}
-            onSelectPartAndBuild={handleSelectSinglePartAndBuild}
             onBackToFeed={() => handleNavigate('feed', 'top')}
           />
         )}

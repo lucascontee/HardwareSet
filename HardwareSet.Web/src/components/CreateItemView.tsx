@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import {
   ArrowLeft,
-  Check,
   Plus,
   Trash2,
 } from 'lucide-react';
@@ -17,10 +16,7 @@ import {
 } from '../data/hardwareCatalog';
 
 interface CreateItemViewProps {
-  products: HardwareProduct[];
   onCreateProduct: (input: CreateProductInput) => Promise<HardwareProduct>;
-  onDeleteProduct: (id: string) => Promise<void>;
-  onSelectPartAndBuild: (product: HardwareProduct) => void;
   onBackToFeed: () => void;
 }
 
@@ -37,10 +33,7 @@ interface FormErrors {
 }
 
 export function CreateItemView({
-  products,
   onCreateProduct,
-  onDeleteProduct,
-  onSelectPartAndBuild,
   onBackToFeed,
 }: CreateItemViewProps) {
   const [name, setName] = useState('');
@@ -172,7 +165,6 @@ export function CreateItemView({
     setErrors(nextErrors);
     setTouched({ name: true, price: true, imageUrl: true });
 
-    // Move focus to the first invalid field (modern-web-guidance forms + system.md)
     if (nameError) {
       nameInputRef.current?.focus();
       setStatusMessage({
@@ -201,7 +193,7 @@ export function CreateItemView({
     setIsSubmitting(true);
     setStatusMessage({
       type: 'sending',
-      text: 'Gravando peça no MongoDB...',
+      text: 'Cadastrando item...',
     });
 
     try {
@@ -237,10 +229,9 @@ export function CreateItemView({
 
       setStatusMessage({
         type: 'success',
-        text: `Peça "${created.name}" inserida no MongoDB (ID: ${created.id}).`,
+        text: `Peça "${created.name}" cadastrada com sucesso.`,
       });
 
-      // Reset form inputs while keeping category
       setName('');
       setPriceText('');
       setImageUrl('');
@@ -253,7 +244,7 @@ export function CreateItemView({
       const message =
         err instanceof Error
           ? err.message
-          : 'Erro ao comunicar com a API e MongoDB.';
+          : 'Não foi possível concluir o cadastro da peça.';
       setStatusMessage({
         type: 'error',
         text: message,
@@ -288,13 +279,13 @@ export function CreateItemView({
           <h1 id="create-item-heading" className="h2-display">
             Cadastrar peça no catálogo.{' '}
             <span className="text-[var(--muted)]">
-              O item é gravado diretamente na coleção Products do MongoDB.
+              Preencha as especificações para adicionar um novo componente.
             </span>
           </h1>
         </div>
 
         <div className="grid-12 items-start">
-          {/* LEFT 7 COLUMNS: Form (system.md Forms + modern-web-guidance forms) */}
+          {/* LEFT 7 COLUMNS: Form */}
           <div className="col-span-12 lg:col-span-7 hw-card p-6 sm:p-8">
             <form
               aria-labelledby="create-item-heading"
@@ -366,7 +357,10 @@ export function CreateItemView({
                   placeholder="Ex: RTX 5070 ou Ryzen 7 5700X"
                   className="min-h-[48px] px-4 rounded-[8px] bg-[var(--g-alt)] border border-[var(--border-strong)] text-[16px] text-[var(--ink)] placeholder:text-[var(--muted)]"
                 />
-                <span id="product-name-hint" className="text-[13px] text-[var(--muted)]">
+                <span
+                  id="product-name-hint"
+                  className="text-[13px] text-[var(--muted)]"
+                >
                   Nome comercial exibido nos cards da vitrine e no montador.
                 </span>
                 {errors.name && (
@@ -530,11 +524,11 @@ export function CreateItemView({
                 />
               </div>
 
-              {/* Dynamic Attributes Dictionary (MongoDB Product.Attributes) */}
+              {/* Dynamic Attributes */}
               <fieldset className="m-0 p-0 border-0 pt-2 border-t border-[var(--border)]">
                 <div className="flex items-center justify-between gap-4 mb-3">
                   <legend className="text-[14px] font-medium text-[var(--ink)]">
-                    Atributos técnicos (salvos no dicionário NoSQL do MongoDB)
+                    Atributos técnicos da peça
                   </legend>
                   <button
                     type="button"
@@ -611,7 +605,7 @@ export function CreateItemView({
                 </div>
               </fieldset>
 
-              {/* Submit Button & Status Line (system.md Forms) */}
+              {/* Submit Button & Status Line */}
               <div className="pt-2">
                 <button
                   type="submit"
@@ -619,9 +613,7 @@ export function CreateItemView({
                   className="btn btn--primary w-full"
                 >
                   <span>
-                    {isSubmitting
-                      ? 'Salvando no MongoDB...'
-                      : 'Cadastrar item no MongoDB'}
+                    {isSubmitting ? 'Cadastrando...' : 'Cadastrar Item'}
                   </span>
                   <svg
                     className="m-arrow"
@@ -660,16 +652,15 @@ export function CreateItemView({
             </form>
           </div>
 
-          {/* RIGHT 5 COLUMNS: Live Card Preview & Database Inventory */}
-          <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
-            {/* Live Preview Card */}
+          {/* RIGHT 5 COLUMNS: Live Card Preview */}
+          <div className="col-span-12 lg:col-span-5">
             <div className="hw-card p-2">
-              <div className="hw-stage h-[220px] p-6 flex items-center justify-center">
+              <div className="hw-stage h-[240px] p-6 flex items-center justify-center">
                 {imageUrl.trim() ? (
                   <img
                     src={imageUrl.trim()}
                     alt={name.trim() || 'Pré-visualização da peça'}
-                    className="hw-stage__img max-h-[165px] w-full object-contain"
+                    className="hw-stage__img max-h-[180px] w-full object-contain"
                   />
                 ) : (
                   <span className="text-[14px] text-[var(--muted)]">
@@ -711,81 +702,6 @@ export function CreateItemView({
                   </ul>
                 )}
               </div>
-            </div>
-
-            {/* Live MongoDB Inventory List */}
-            <div className="hw-card p-6">
-              <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
-                <div>
-                  <h2 className="t-card-title m-0">
-                    Peças salvas no MongoDB
-                  </h2>
-                  <p className="t-label-meta m-0 mt-1 tabular-price">
-                    {products.length}{' '}
-                    {products.length === 1
-                      ? 'documento registrado'
-                      : 'documentos registrados'}
-                  </p>
-                </div>
-              </div>
-
-              {products.length === 0 ? (
-                <p className="t-body-copy m-0 py-6 text-[var(--muted)]">
-                  Nenhuma peça cadastrada no banco ainda. Utilize o formulário
-                  ao lado para inserir o primeiro item no MongoDB.
-                </p>
-              ) : (
-                <ul className="list-none m-0 p-0 divide-y divide-[var(--border)] max-h-[380px] overflow-y-auto">
-                  {products.map((item) => (
-                    <li
-                      key={item.id}
-                      className="py-3.5 flex items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-11 h-11 rounded-[8px] bg-[var(--stage)] p-1.5 flex items-center justify-center shrink-0">
-                          {item.image && (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-full h-full object-contain"
-                            />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <span className="block text-[12px] text-[var(--muted)]">
-                            {item.categoryLabel}
-                          </span>
-                          <span className="block text-[15px] font-medium text-[var(--ink)] truncate">
-                            {item.name}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono text-[14px] text-[var(--ink)] tabular-price">
-                          {formatBRL(item.price)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => onSelectPartAndBuild(item)}
-                          title="Usar esta peça no Montador"
-                          className="min-h-[36px] px-2.5 rounded-[6px] text-[12px] font-medium bg-[var(--stage)] text-[var(--ink)] border border-[var(--border)] hover:border-[var(--border-strong)] cursor-pointer"
-                        >
-                          <Check size={13} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteProduct(item.id)}
-                          aria-label={`Excluir ${item.name} do MongoDB`}
-                          className="w-8 h-8 rounded-[6px] inline-flex items-center justify-center text-[var(--muted)] hover:text-[#f87171] bg-transparent border-0 cursor-pointer"
-                        >
-                          <Trash2 size={14} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           </div>
         </div>

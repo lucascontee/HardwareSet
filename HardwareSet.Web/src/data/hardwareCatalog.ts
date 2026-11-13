@@ -52,7 +52,7 @@ export const SLOT_DEFINITIONS: SlotDefinition[] = [
     shortLabel: 'Memória RAM',
     emptyHint: 'Memória de acesso rápido para multitarefa',
     suggestedAttributes: [
-      { key: 'Capacidade', placeholder: 'Ex: 16 GB DDR4' },
+      { key: 'Capacidade', placeholder: 'Ex: 8 GB DDR4' },
       { key: 'Velocidade', placeholder: 'Ex: 3200 MT/s' },
       { key: 'Latência', placeholder: 'Ex: CL16' },
     ],
@@ -138,7 +138,7 @@ export function mapApiProductToHardwareProduct(
           .slice(0, 3)
           .map((s) => s.value)
           .join(' · ')
-      : `${categoryLabel} homologado`);
+      : `${categoryLabel} selecionado`);
 
   return {
     id: apiProduct.id || crypto.randomUUID(),
@@ -155,10 +155,6 @@ export function mapApiProductToHardwareProduct(
   };
 }
 
-/**
- * Generates dynamic pre-configured setups from the real database products
- * when corresponding components exist in MongoDB.
- */
 export function buildDynamicSetupsFromCatalog(
   products: HardwareProduct[]
 ): PrebuiltSetup[] {
@@ -196,10 +192,10 @@ export function buildDynamicSetupsFromCatalog(
     );
 
     setups.push({
-      id: `db-setup-${gpu.id}`,
+      id: `setup-${gpu.id}`,
       name: `Estação ${gpu.name}${motherboard ? ` · ${motherboard.name}` : ''}`,
-      tag: `Configuração do banco de dados · ${totalWatts}\u00A0W estimados`,
-      description: `Conjunto montado dinamicamente a partir das peças cadastradas no MongoDB com ${gpu.name}.`,
+      tag: `Desempenho dedicado · ${totalWatts}\u00A0W estimados`,
+      description: `Configuração equilibrada equipada com ${gpu.name} para máxima fluidez gráfica e multitarefa.`,
       parts,
     });
   });

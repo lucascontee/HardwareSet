@@ -158,7 +158,7 @@ export function BuilderView({
             <h1 id="builder-heading" className="h2-display">
               Criador de computador.{' '}
               <span className="text-[var(--muted)]">
-                Selecione cada slot com peças carregadas do MongoDB.
+                Selecione cada slot com peças
               </span>
             </h1>
           </div>
@@ -184,7 +184,7 @@ export function BuilderView({
               className="btn btn--secondary !min-h-[40px] !px-3.5 !text-[13px]"
             >
               <Plus size={14} aria-hidden="true" />
-              <span>Cadastrar nova peça</span>
+              <span>Cadastrar Item</span>
             </button>
           </div>
         </div>
@@ -285,13 +285,7 @@ export function BuilderView({
               <div>
                 <div className="flex items-center gap-2.5 mb-1">
                   <span className="font-mono text-[13px] px-2 py-0.5 rounded-[4px] bg-[var(--action)] text-[var(--action-ink)] font-medium">
-                    Etapa {currentSlot.step} de {totalSlots}
-                  </span>
-                  <span className="t-label-meta">
-                    {availableProducts.length}{' '}
-                    {availableProducts.length === 1
-                      ? 'opção no banco'
-                      : 'opções no banco'}
+                    Etapa {currentSlot.step}
                   </span>
                 </div>
                 <h2 className="h3-display m-0">{currentSlot.label}</h2>
@@ -333,11 +327,11 @@ export function BuilderView({
                 {availableProducts.length === 0 ? (
                   <div className="hw-card p-10 text-center">
                     <h3 className="t-card-title m-0 mb-2">
-                      Nenhuma peça cadastrada para {currentSlot.shortLabel}
+                      Nenhuma peça disponível para {currentSlot.shortLabel}
                     </h3>
                     <p className="t-body-copy m-0 mb-6">
-                      Adicione um item desta categoria ao MongoDB para
-                      selecioná-lo neste slot.
+                      Cadastre um item desta categoria para selecioná-lo neste
+                      slot.
                     </p>
                     <button
                       type="button"
@@ -345,7 +339,7 @@ export function BuilderView({
                       className="btn btn--primary"
                     >
                       <Plus size={16} aria-hidden="true" />
-                      <span>Cadastrar {currentSlot.shortLabel}</span>
+                      <span>Cadastrar Item</span>
                     </button>
                   </div>
                 ) : (
@@ -496,9 +490,6 @@ export function BuilderView({
               <div className="flex items-center justify-between gap-4 pb-5 border-b border-[var(--border)]">
                 <div>
                   <h2 className="t-card-title m-0">Resumo do Setup</h2>
-                  <p className="t-label-meta m-0 mt-1 tabular-price">
-                    {filledCount} de {totalSlots} componentes selecionados
-                  </p>
                 </div>
 
                 {filledCount > 0 && (
@@ -642,7 +633,7 @@ export function BuilderView({
                 <span>
                   {isComplete
                     ? 'Finalizar configuração'
-                    : `Salvar configuração (${filledCount}/${totalSlots})`}
+                    : 'Salvar configuração'}
                 </span>
                 <svg
                   className="m-arrow"
@@ -668,11 +659,10 @@ export function BuilderView({
                   className="mt-4 p-4 rounded-[12px] bg-[var(--stage)] border border-[var(--border-strong)]"
                 >
                   <p className="m-0 text-[14px] font-medium text-[var(--ink)] mb-1">
-                    Configuração registrada ({filledCount}/{totalSlots} peças).
+                    Configuração registrada com sucesso.
                   </p>
                   <p className="m-0 text-[13px] text-[var(--c-text)] tabular-price">
-                    Orçamento total de {formatBRL(totalPrice)} validado com os
-                    itens do MongoDB.
+                    Orçamento total de {formatBRL(totalPrice)} calculado.
                   </p>
                 </div>
               )}
@@ -689,8 +679,7 @@ export function BuilderView({
             onClick={() => setMobileSummaryOpen((prev) => !prev)}
             className="text-left bg-transparent border-0 p-0 cursor-pointer"
           >
-            <span className="block text-[12px] text-[var(--muted)] tabular-price">
-              {filledCount}/{totalSlots} peças ·{' '}
+            <span className="block text-[12px] text-[var(--muted)]">
               {mobileSummaryOpen ? 'Ocultar resumo' : 'Ver resumo'}
             </span>
             <AnimatedPrice
@@ -705,7 +694,7 @@ export function BuilderView({
             onClick={() => setOrderSubmitted(true)}
             className="btn btn--primary"
           >
-            <span>Finalizar ({filledCount}/{totalSlots})</span>
+            <span>Finalizar</span>
           </button>
         </div>
 
