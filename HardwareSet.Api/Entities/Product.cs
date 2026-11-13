@@ -1,10 +1,9 @@
-using System.Text.Json.Serialization;
-using HardwareSet.Api.Converters;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace HardwareSet.Api.Entities;
 
+[BsonIgnoreExtraElements]
 public class Product
 {
     [BsonId]
@@ -14,14 +13,19 @@ public class Product
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
+    [BsonElement("category")]
+    public string Category { get; set; } = string.Empty;
+
     [BsonElement("price")]
     [BsonRepresentation(BsonType.Decimal128)]
     public decimal Price { get; set; }
 
-    [BsonElement("price")]
-    public string FotoUrl { get; set; }
+    [BsonElement("imageUrl")]
+    public string ImageUrl { get; set; } = string.Empty;
 
-    public DateTime PurchaseDate { get; set; }
+    [BsonElement("purchaseDate")]
+    public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
 
+    [BsonElement("attributes")]
     public Dictionary<string, string> Attributes { get; set; } = new();
 }

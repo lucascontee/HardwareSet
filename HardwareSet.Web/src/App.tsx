@@ -1,30 +1,52 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   BuildSelection,
+  CreateProductInput,
   HardwareCategory,
   HardwareProduct,
   PrebuiltSetup,
 } from './types/hardware';
-import { SLOT_DEFINITIONS, getProductById } from './data/hardwareCatalog';
+import { SLOT_DEFINITIONS } from './data/hardwareCatalog';
+import {
+  createProductInDb,
+  fetchAllProducts,
+} from './services/productApi';
 import { Navbar, type ActiveView } from './components/Navbar';
 import { FeedView } from './components/FeedView';
 import { BuilderView } from './components/BuilderView';
+import { CreateItemView } from './components/CreateItemView';
 import { Footer } from './components/Footer';
 
 export function App() {
   const [activeView, setActiveView] = useState<ActiveView>('feed');
   const [activeCategory, setActiveCategory] = useState<HardwareCategory>('cpu');
+  const [products, setProducts] = useState<HardwareProduct[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [selection, setSelection] = useState<BuildSelection>({});
 
-  const { selectedCount, totalPrice } = useMemo(() => {
+  const loadCatalog = useCallback(async () => {
+    setIsLoading(true);
+    setApiError(null);
+    try {
+      const items = await fetchAllProducts();
+      setProducts(items);
+    } catch {
+      setApiError('Não foi possível carregar o catálogo no momento.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
+
+  const totalPrice = useMemo(() => {
     const items = Object.values(selection).filter(
       (item): item is HardwareProduct => Boolean(item)
     );
-    const total = items.reduce((sum, item) => sum + item.price, 0);
-    return {
-      selectedCount: items.length,
-      totalPrice: total,
-    };
+    return items.reduce((sum, item) => sum + item.price, 0);
   }, [selection]);
 
   const handleNavigate = (view: ActiveView, sectionId?: string) => {
@@ -56,14 +78,7 @@ export function App() {
   };
 
   const handleLoadPrebuiltSetup = (setup: PrebuiltSetup) => {
-    const hydrated: BuildSelection = {};
-    (Object.keys(setup.parts) as HardwareCategory[]).forEach((category) => {
-      const product = getProductById(setup.parts[category]);
-      if (product) {
-        hydrated[category] = product;
-      }
-    });
-    setSelection(hydrated);
+    setSelection({ ...setup.parts });
     setActiveCategory('gpu');
     setActiveView('builder');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -106,25 +121,38 @@ export function App() {
     setActiveCategory('cpu');
   };
 
+  const handleCreateProduct = async (
+    input: CreateProductInput
+  ): Promise<HardwareProduct> => {
+    const created = await createProductInDb(input);
+    setProducts((prev) => [created, ...prev]);
+    return created;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--g-main)] text-[var(--ink)]">
       <Navbar
         activeView={activeView}
         onNavigate={handleNavigate}
-        selectedCount={selectedCount}
-        totalSpots={SLOT_DEFINITIONS.length}
         totalPrice={totalPrice}
       />
 
       <main id="top" className="flex-1">
-        {activeView === 'feed' ? (
+        {activeView === 'feed' && (
           <FeedView
+            products={products}
+            isLoading={isLoading}
+            error={apiError}
             onStartEmptyBuilder={handleStartEmptyBuilder}
+            onOpenCreateItem={() => handleNavigate('create')}
             onLoadPrebuiltSetup={handleLoadPrebuiltSetup}
             onSelectSinglePartAndBuild={handleSelectSinglePartAndBuild}
           />
-        ) : (
+        )}
+
+        {activeView === 'builder' && (
           <BuilderView
+            products={products}
             selection={selection}
             activeCategory={activeCategory}
             onChangeCategory={setActiveCategory}
@@ -132,6 +160,14 @@ export function App() {
             onRemovePart={handleRemovePart}
             onClearBuild={handleClearBuild}
             onLoadPrebuilt={handleLoadPrebuiltSetup}
+            onOpenCreateItem={() => handleNavigate('create')}
+            onBackToFeed={() => handleNavigate('feed', 'top')}
+          />
+        )}
+
+        {activeView === 'create' && (
+          <CreateItemView
+            onCreateProduct={handleCreateProduct}
             onBackToFeed={() => handleNavigate('feed', 'top')}
           />
         )}

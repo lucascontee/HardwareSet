@@ -8,50 +8,56 @@ export function Footer({ onNavigate }: FooterProps) {
   return (
     <footer className="section-block bg-[var(--g-dark)]">
       <div className="wrap flex flex-col justify-between gap-16">
-        {/* Row 1: Close-type (sections.md Section 2) */}
+        {/* Row 1: Close-type */}
         <div className="pb-16 border-b border-[var(--border)] flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div>
             <h2 className="h2-display measure mb-4">
-              Monte seu computador peça por peça.{' '}
-              <span className="text-[var(--muted)]">
-                Orçamento calculado na hora, sem peças incompatíveis.
-              </span>
+              Monte seu computador peça por peça.
             </h2>
             <p className="t-body-copy m-0">
-              Inicie do zero ou personalize qualquer uma das três estações
-              pré-configuradas.
+              Cadastre novas peças no catálogo ou inicie a montagem do seu
+              computador agora.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onNavigate('builder')}
-            className="btn btn--primary self-start lg:self-auto"
-          >
-            <span>Criar computador</span>
-            <svg
-              className="m-arrow"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden="true"
+          <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+            <button
+              type="button"
+              onClick={() => onNavigate('create')}
+              className="btn btn--secondary"
             >
-              <path
-                d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+              <span>Cadastrar Item</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('builder')}
+              className="btn btn--primary"
+            >
+              <span>Criar computador</span>
+              <svg
+                className="m-arrow"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Row 2: Directory & Legal Row (system.md Footer) */}
+        {/* Row 2: Directory & Legal Row */}
         <div className="flex flex-col gap-10">
           <div className="grid-12 items-start">
-            <div className="col-span-12 md:col-span-5">
+            <div className="col-span-12 md:col-span-7">
               <div className="inline-flex items-center gap-3 mb-3">
                 <span
                   className="inline-flex items-center justify-center w-6 h-6 rounded-[6px] bg-[var(--action)] text-[var(--action-ink)]"
@@ -83,14 +89,13 @@ export function Footer({ onNavigate }: FooterProps) {
                 </span>
               </div>
               <p className="t-body-copy measure m-0">
-                Configurador de hardware e estações de trabalho de alto
-                desempenho.
+                Configurador de hardware personalizado
               </p>
             </div>
 
-            <div className="col-span-6 md:col-span-3">
+            <div className="col-span-12 md:col-span-5">
               <h3 className="t-label-meta m-0 mb-3">Navegação</h3>
-              <ul className="list-none m-0 p-0 flex flex-col gap-2">
+              <ul className="list-none m-0 p-0 flex flex-wrap gap-x-8 gap-y-2">
                 <li>
                   <button
                     type="button"
@@ -121,6 +126,15 @@ export function Footer({ onNavigate }: FooterProps) {
                 <li>
                   <button
                     type="button"
+                    onClick={() => onNavigate('create')}
+                    className="nav-link !min-h-[32px] !p-0"
+                  >
+                    Cadastrar Item
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
                     onClick={() => onNavigate('builder')}
                     className="nav-link !min-h-[32px] !p-0"
                   >
@@ -129,17 +143,8 @@ export function Footer({ onNavigate }: FooterProps) {
                 </li>
               </ul>
             </div>
-
-            <div className="col-span-6 md:col-span-4">
-              <h3 className="t-label-meta m-0 mb-3">Componentes homologados</h3>
-              <p className="t-body-copy m-0 text-[15px]">
-                AMD Ryzen · NVIDIA GeForce · AMD Radeon · ASUS ROG Strix ·
-                Gigabyte Aorus · HyperX · WD Black · Corsair
-              </p>
-            </div>
           </div>
 
-          {/* Single Footer Credit Line (SKILL.md House Rule 1 & copy.md Credits) */}
           <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[13px] text-[var(--muted)]">
             <span>© 2026 HardwareSet. Todos os direitos reservados.</span>
             <span>
