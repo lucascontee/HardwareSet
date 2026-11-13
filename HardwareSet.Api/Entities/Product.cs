@@ -18,6 +18,10 @@ public class Product
     [BsonRepresentation(BsonType.Decimal128)]
     public decimal Price { get; set; }
 
+    [BsonElement("price")]
+    public string FotoUrl { get; set; }
+
+    public DateTime PurchaseDate { get; set; }
 
     public Dictionary<string, string> Attributes { get; set; } = new();
 }
