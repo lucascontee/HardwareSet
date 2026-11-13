@@ -36,6 +36,16 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+try
+{
+    var mongoContext = app.Services.GetRequiredService<MongoDbContext>();
+    await DatabaseSeeder.SeedAsync(mongoContext);
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Não foi possível executar o seed automático inicial.");
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

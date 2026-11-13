@@ -1,3 +1,4 @@
+using HardwareSet.Api.Data;
 using HardwareSet.Api.Entities;
 using HardwareSet.Api.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,22 @@ namespace HardwareSet.Api.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
+    private readonly MongoDbContext _mongoContext;
 
-    public ProductsController(IProductService productService)
+    public ProductsController(IProductService productService, MongoDbContext mongoContext)
     {
         _productService = productService;
+        _mongoContext = mongoContext;
+    }
+
+    [HttpPost("seed")]
+    public async Task<ActionResult<IEnumerable<Product>>> Seed(
+        [FromQuery] bool reset = false,
+        CancellationToken cancellationToken = default)
+    {
+        await DatabaseSeeder.SeedAsync(_mongoContext, reset, cancellationToken);
+        var products = await _productService.GetAllAsync(cancellationToken);
+        return Ok(products);
     }
 
     [HttpGet]
