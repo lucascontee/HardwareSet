@@ -1,0 +1,471 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  accent-color: #e2e6ed;
+
+  /* Grounds & Surfaces (Black & Silver Architecture) */
+  --g-main: #070708;
+  --g-alt: #0d0e11;
+  --g-dark: #040405;
+  --card: #131417;
+  --card-hover: #17191d;
+  --stage: #181a1f;
+
+  /* Ink & Silver Hierarchy */
+  --ink: #f3f4f6;
+  --c-text: #cfd3da;
+  --muted: #8e949f;
+  --action: #e2e6ed;
+  --action-hover: #f5f7fa;
+  --action-ink: #070708;
+
+  /* Hairlines & Highlights */
+  --border: rgba(226, 230, 238, 0.11);
+  --border-strong: rgba(226, 230, 238, 0.24);
+  --highlight-top: rgba(255, 255, 255, 0.06);
+
+  /* Rhythm Tokens (system.md) */
+  --nav: 72px;
+  --padt: 120px;
+  --padb: 72px;
+  --gut: 80px;
+  --hgap: 48px;
+  --hpadb: 64px;
+  --bar: 0px;
+
+  /* Spacing Scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --s-10: 128px;
+
+  /* Soft Radius Family */
+  --r-lg: 20px;
+  --r-md: 12px;
+  --r-sm: 8px;
+  --r-btn: 8px;
+
+  /* Typography Scale (layout-v4.md) */
+  --font-display: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --display-weight: 500;
+
+  --t-h1: clamp(2.375rem, 1.5rem + 3.2vw, 4.35rem);
+  --t-h2: clamp(1.875rem, 1.35rem + 2vw, 3rem);
+  --t-h3: clamp(1.5rem, 1.25rem + 0.8vw, 1.75rem);
+  --t-lead: clamp(1.125rem, 1rem + 0.35vw, 1.25rem);
+  --t-card: 1.25rem;
+  --t-body: 1rem;
+  --t-small: 0.875rem;
+  --t-label: 0.8125rem;
+  --t-stat: clamp(1.75rem, 1.35rem + 1.2vw, 2.375rem);
+
+  /* Motion Tokens (motion.md) */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --m-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --m-in: 150ms;
+  --m-out: 120ms;
+  --m-press: 90ms;
+  --m-image: 600ms;
+  --m-image-out: 400ms;
+
+  /* Scrollbar Tokens */
+  --scrollbar-track: #0d0e11;
+  --scrollbar-thumb: #6c727f;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    --gut: 48px;
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --nav: 56px;
+    --padt: 96px;
+    --padb: 48px;
+    --gut: 24px;
+    --hgap: 40px;
+    --hpadb: 24px;
+    --r-lg: 18px;
+    --t-card: 1.125rem;
+  }
+}
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--g-main);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Equal left and right content edges (.wrap from layout-v4.md) */
+.wrap {
+  width: min(100% - 2 * var(--gut), 1280px);
+  margin-inline: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* 12-column grid (layout-v4.md) */
+.grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 639px) {
+  .grid-12 {
+    gap: 12px;
+  }
+}
+
+/* Skip link (system.md) */
+.skip-link {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  z-index: 50;
+  background: var(--action);
+  color: var(--action-ink);
+  padding: 10px 18px;
+  border-radius: var(--r-btn);
+  font-size: var(--t-small);
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+
+/* Fixed Opaque Header (system.md Nav) */
+header.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav);
+  background-color: var(--g-main);
+  border-bottom: 1px solid var(--border);
+  z-index: 30;
+}
+
+/* Typography utilities */
+.h1-display {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: var(--t-h1);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.h2-display {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: var(--t-h2);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.h3-display {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-size: var(--t-h3);
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.t-card-title {
+  font-size: var(--t-card);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.t-body-copy {
+  font-size: var(--t-body);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--c-text);
+}
+
+.t-label-meta {
+  font-size: var(--t-label);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.tabular-price {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.measure {
+  max-width: 62ch;
+}
+
+/* Section Rhythm (layout-v4.md) */
+.section-block {
+  padding-top: var(--padt);
+  padding-bottom: calc(var(--padb) + var(--bar));
+  background-color: var(--g-main);
+}
+
+.section-block.ground-surface {
+  background-color: var(--g-alt);
+}
+
+.hero-screen {
+  min-height: 100svh;
+  padding-top: calc(var(--nav) + var(--hgap));
+  padding-bottom: calc(var(--hpadb) + var(--bar));
+  display: flex;
+  align-items: stretch;
+  background-color: var(--g-main);
+}
+
+/* Cards & Lit Studio Hardware Panels (cards.md + backgrounds.md) */
+.hw-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: inset 0 1px 0 0 var(--highlight-top);
+  transition:
+    transform 180ms var(--ease),
+    border-color 180ms var(--ease),
+    background-color 180ms var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hw-card--interactive:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    background-color: var(--card-hover);
+  }
+}
+
+/* Lit studio sweep behind transparent hardware PNGs (backgrounds.md) */
+.hw-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background-color: var(--stage);
+  background-image:
+    radial-gradient(62% 54% at 50% 44%, rgba(226, 232, 242, 0.13) 0%, rgba(24, 26, 31, 0) 100%),
+    radial-gradient(80% 35% at 50% 95%, rgba(210, 218, 230, 0.06) 0%, rgba(24, 26, 31, 0) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.hw-stage__img {
+  transition: transform var(--m-image) var(--ease);
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hw-card--interactive:hover .hw-stage__img,
+  .m-zoom:hover .hw-stage__img {
+    transform: scale(1.03);
+  }
+}
+
+/* Ruled spec rows (.rows from system.md) */
+.spec-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.spec-rows > li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--t-body);
+  line-height: 1.5;
+}
+
+/* Buttons (system.md + motion.md) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: var(--r-btn);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    transform var(--m-in) var(--ease),
+    background-color var(--m-in) var(--ease),
+    border-color var(--m-in) var(--ease),
+    color var(--m-in) var(--ease);
+}
+
+.btn--primary {
+  background-color: var(--action);
+  color: var(--action-ink);
+  border: 1px solid transparent;
+}
+
+.btn--secondary {
+  background-color: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+}
+
+.btn .m-arrow {
+  transition: transform var(--m-in) var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn--primary:hover:not(:disabled) {
+    background-color: var(--action-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn--secondary:hover:not(:disabled) {
+    background-color: rgba(226, 230, 238, 0.07);
+    border-color: rgba(226, 230, 238, 0.38);
+    transform: translateY(-1px);
+  }
+
+  .btn:hover:not(:disabled) .m-arrow {
+    transform: translateX(3px);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+    transition-duration: var(--m-press);
+  }
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Nav word link with drawn underline (motion.md) */
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--m-in) var(--ease);
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 8px;
+  height: 1px;
+  background-color: var(--ink);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--m-in) var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    color: var(--ink);
+  }
+  .nav-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+.nav-link[aria-current="page"] {
+  color: var(--ink);
+}
+
+.nav-link[aria-current="page"]::after {
+  height: 2px;
+  background-color: var(--action);
+  transform: scaleX(1);
+}
+
+/* Instant Focus Ring (system.md Access: never animates) */
+:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+  transition: none !important;
+}
+
+/* Reduced Motion (motion.md) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
