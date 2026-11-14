@@ -1,0 +1,33 @@
+@InventoryApi_HostAddress = http://localhost:5190
+
+### 1. Listar todos os itens em estoque no PostgreSQL
+GET {{InventoryApi_HostAddress}}/api/inventory
+
+### 2. Inicializar estoque manualmente para uma peça
+POST {{InventoryApi_HostAddress}}/api/inventory
+Content-Type: application/json
+
+{
+  "productId": "6af7983c92614215520ddef8",
+  "productName": "RTX 5070",
+  "category": "gpu",
+  "initialQuantity": 15
+}
+
+### 3. Ajustar saldo de estoque (+5 unidades)
+PATCH {{InventoryApi_HostAddress}}/api/inventory/6af7983c92614215520ddef8/stock
+Content-Type: application/json
+
+{
+  "quantityDelta": 5
+}
+
+### 4. Reservar lote de peças em transação única (ACID)
+POST {{InventoryApi_HostAddress}}/api/inventory/reserve
+Content-Type: application/json
+
+{
+  "items": [
+    { "productId": "6af7983c92614215520ddef8", "quantity": 1 }
+  ]
+}

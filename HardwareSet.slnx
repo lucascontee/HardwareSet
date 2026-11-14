@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="HardwareSet.Contracts/HardwareSet.Contracts.csproj" />
   <Project Path="HardwareSet.Api/HardwareSet.Api.csproj" />
   <Project Path="HardwareSet.Builder.Api/HardwareSet.Builder.Api.csproj" />
+  <Project Path="HardwareSet.Inventory.Api/HardwareSet.Inventory.Api.csproj" />
 </Solution>

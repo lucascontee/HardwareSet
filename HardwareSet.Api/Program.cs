@@ -2,6 +2,7 @@ using HardwareSet.Api.Converters;
 using HardwareSet.Api.Data;
 using HardwareSet.Api.Repositories;
 using HardwareSet.Api.Services;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection(MongoDbSettings.SectionName));
 builder.Services.AddSingleton<MongoDbContext>();
+
+builder.Services.AddMassTransit(bus =>
+{
+    bus.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        {
+            h.Username(builder.Configuration["RabbitMq:Username"] ?? "admin");
+            h.Password(builder.Configuration["RabbitMq:Password"] ?? "password123");
+        });
+    });
+});
 
 // Register Repositories and Services
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
