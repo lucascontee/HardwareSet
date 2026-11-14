@@ -1,0 +1,93 @@
+@BuilderApi_HostAddress = http://localhost:5189
+
+### 1. Validar setup completo e compatível (AM4 + DDR4 + 650W)
+POST {{BuilderApi_HostAddress}}/api/builds/validate
+Content-Type: application/json
+
+{
+  "components": [
+    {
+      "name": "Ryzen 7 5700X",
+      "category": "cpu",
+      "price": 1290.00,
+      "attributes": { "socket": "AM4", "tdp": "65W" }
+    },
+    {
+      "name": "B550M Aorus Elite",
+      "category": "motherboard",
+      "price": 890.00,
+      "attributes": { "socket": "AM4", "memory": "4x DDR4 até 128GB", "pcie": "PCIe 4.0 x16" }
+    },
+    {
+      "name": "RTX 5070",
+      "category": "gpu",
+      "price": 4890.00,
+      "attributes": { "tdp": "250W", "interface": "PCIe 5.0 x16" }
+    },
+    {
+      "name": "Memoria Ram Redragon 8gb DDR4",
+      "category": "ram",
+      "price": 260.00,
+      "attributes": { "capacity": "8GB DDR4" }
+    },
+    {
+      "name": "SSD Sandisk 1tb",
+      "category": "ssd",
+      "price": 680.00,
+      "attributes": { "interface": "M.2 PCIe Gen4 x4" }
+    },
+    {
+      "name": "Fonte 650w Corsair",
+      "category": "psu",
+      "price": 460.00,
+      "attributes": { "wattage": "650W Reais" }
+    }
+  ]
+}
+
+### 2. Validar setup com conflitos (Soquete AM5 vs AM4, Memória DDR5 em placa DDR4 e Fonte fraca)
+POST {{BuilderApi_HostAddress}}/api/builds/validate
+Content-Type: application/json
+
+{
+  "components": [
+    {
+      "name": "Ryzen 7 7800X3D",
+      "category": "cpu",
+      "price": 2890.00,
+      "attributes": { "socket": "AM5", "tdp": "120W" }
+    },
+    {
+      "name": "B550M Aorus Elite",
+      "category": "motherboard",
+      "price": 890.00,
+      "attributes": { "socket": "AM4", "memory": "4x DDR4 até 128GB" }
+    },
+    {
+      "name": "RTX 5070",
+      "category": "gpu",
+      "price": 4890.00,
+      "attributes": { "tdp": "250W" }
+    },
+    {
+      "name": "Kingston Fury Beast 16GB DDR5",
+      "category": "ram",
+      "price": 520.00,
+      "attributes": { "capacity": "16GB DDR5" }
+    },
+    {
+      "name": "Fonte Genérica 350W",
+      "category": "psu",
+      "price": 150.00,
+      "attributes": { "wattage": "350W" }
+    }
+  ]
+}
+
+### 3. Criar nova sessão de montagem (rascunho)
+POST {{BuilderApi_HostAddress}}/api/builds
+Content-Type: application/json
+
+{
+  "name": "Meu Setup Gamer"
+}
