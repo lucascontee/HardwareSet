@@ -1,19 +1,18 @@
 using HardwareSet.Builder.Api.Clients;
+using HardwareSet.Builder.Api.Data;
 using HardwareSet.Builder.Api.Repositories;
 using HardwareSet.Builder.Api.Rules;
 using HardwareSet.Builder.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// TODO: Configurar Redis para persistência distribuída das sessões de montagem:
-// builder.Services.AddStackExchangeRedisCache(options =>
-// {
-//     options.Configuration = builder.Configuration["Redis:ConnectionString"];
-//     options.InstanceName = builder.Configuration["Redis:InstanceName"];
-// });
+// Configure Redis
+builder.Services.Configure<RedisDbSettings>(
+    builder.Configuration.GetSection(RedisDbSettings.SectionName));
+builder.Services.AddSingleton<RedisDbContext>();
 
-// Repositório de sessões de montagem (atualmente in-memory até a implementação do Redis)
-builder.Services.AddSingleton<IBuildRepository, BuildRepository>();
+// Register Repositories
+builder.Services.AddScoped<IBuildRepository, BuildRepository>();
 
 // Regras de negócio e validação de compatibilidade de hardware (Strategy / Rule Engine)
 builder.Services.AddSingleton<ICompatibilityRule, CpuMotherboardSocketRule>();

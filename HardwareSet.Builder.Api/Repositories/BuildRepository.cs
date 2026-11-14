@@ -1,33 +1,46 @@
-using System.Collections.Concurrent;
+using System.Text.Json;
+using HardwareSet.Builder.Api.Data;
 using HardwareSet.Builder.Api.Models;
 
 namespace HardwareSet.Builder.Api.Repositories;
 
 public class BuildRepository : IBuildRepository
 {
-    // TODO: Substituir o dicionário em memória abaixo pelo Redis (IDistributedCache / StackExchange.Redis),
-    // serializando a sessão em JSON com chave "build:{id}" e aplicando TTL configurável (ex: 120 minutos).
-    private static readonly ConcurrentDictionary<string, BuildSession> InMemorySessions = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public Task<BuildSession?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    private readonly RedisDbContext _dbContext;
+
+    public BuildRepository(RedisDbContext dbContext)
     {
-        // TODO: Buscar no Redis via _distributedCache.GetStringAsync($"build:{id}", cancellationToken)
-        InMemorySessions.TryGetValue(id, out var session);
-        return Task.FromResult(session);
+        _dbContext = dbContext;
     }
 
-    public Task<BuildSession> SaveAsync(BuildSession session, CancellationToken cancellationToken = default)
+    public async Task<BuildSession?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        // TODO: Salvar no Redis via _distributedCache.SetStringAsync($"build:{session.Id}", json, DistributedCacheEntryOptions, cancellationToken)
+        var redisValue = await _dbContext.Database.StringGetAsync(_dbContext.GetBuildKey(id));
+        if (redisValue.IsNullOrEmpty)
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize<BuildSession>(redisValue.ToString(), JsonOptions);
+    }
+
+    public async Task<BuildSession> SaveAsync(BuildSession session, CancellationToken cancellationToken = default)
+    {
         session.UpdatedAt = DateTime.UtcNow;
-        InMemorySessions[session.Id] = session;
-        return Task.FromResult(session);
+        var json = JsonSerializer.Serialize(session, JsonOptions);
+
+        await _dbContext.Database.StringSetAsync(
+            _dbContext.GetBuildKey(session.Id),
+            json,
+            _dbContext.DefaultExpiry);
+
+        return session;
     }
 
-    public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        // TODO: Remover chave no Redis via _distributedCache.RemoveAsync($"build:{id}", cancellationToken)
-        var removed = InMemorySessions.TryRemove(id, out _);
-        return Task.FromResult(removed);
+        return await _dbContext.Database.KeyDeleteAsync(_dbContext.GetBuildKey(id));
     }
 }
