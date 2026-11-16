@@ -4,23 +4,15 @@ import type {
   HardwareProduct,
 } from '../types/hardware';
 import { mapApiProductToHardwareProduct } from '../data/hardwareCatalog';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:5188/api/products';
+import { GATEWAY_ROUTES, gatewayRequest } from './gatewayClient';
 
 export async function fetchAllProducts(): Promise<HardwareProduct[]> {
-  const response = await fetch(API_BASE_URL, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+  const data = await gatewayRequest<ApiProduct[]>(
+    GATEWAY_ROUTES.products,
+    { method: 'GET' },
+    'Não foi possível carregar o catálogo de peças.'
+  );
 
-  if (!response.ok) {
-    throw new Error('Não foi possível carregar o catálogo de peças.');
-  }
-
-  const data: ApiProduct[] = await response.json();
   return data.map(mapApiProductToHardwareProduct);
 }
 
@@ -39,30 +31,22 @@ export async function createProductInDb(
     },
   };
 
-  const response = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+  const created = await gatewayRequest<ApiProduct>(
+    GATEWAY_ROUTES.products,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+    'Não foi possível cadastrar o item.'
+  );
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    throw new Error(errorText || 'Não foi possível cadastrar o item.');
-  }
-
-  const created: ApiProduct = await response.json();
   return mapApiProductToHardwareProduct(created);
 }
 
 export async function deleteProductFromDb(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('Não foi possível remover o item.');
-  }
+  await gatewayRequest<void>(
+    `${GATEWAY_ROUTES.products}/${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+    'Não foi possível remover o item.'
+  );
 }

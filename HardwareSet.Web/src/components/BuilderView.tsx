@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
   Cpu,
   HardDrive,
+  Info,
   Layers,
   Monitor,
   Plus,
@@ -15,6 +17,7 @@ import {
 } from 'lucide-react';
 import type {
   BuildSelection,
+  CompatibilityReport,
   HardwareCategory,
   HardwareProduct,
   PrebuiltSetup,
@@ -29,6 +32,8 @@ import { AnimatedPrice } from './AnimatedPrice';
 interface BuilderViewProps {
   products: HardwareProduct[];
   selection: BuildSelection;
+  compatibility: CompatibilityReport | null;
+  isValidatingCompatibility: boolean;
   activeCategory: HardwareCategory;
   onChangeCategory: (category: HardwareCategory) => void;
   onSelectPart: (product: HardwareProduct) => void;
@@ -61,6 +66,8 @@ function getCategoryIcon(category: HardwareCategory) {
 export function BuilderView({
   products,
   selection,
+  compatibility,
+  isValidatingCompatibility,
   activeCategory,
   onChangeCategory,
   onSelectPart,
@@ -98,12 +105,27 @@ export function BuilderView({
     0
   );
 
-  const totalWattage = selectedList.reduce(
+  const fallbackWattage = selectedList.reduce(
     (sum, item) => sum + (item.product ? item.product.wattage : 0),
     0
   );
 
-  const psuCapacity = 650;
+  const totalWattage =
+    compatibility && filledCount > 0
+      ? compatibility.estimatedTdpWatts
+      : fallbackWattage;
+
+  const psuCapacity =
+    compatibility?.providedPsuWatts ||
+    compatibility?.recommendedPsuWatts ||
+    650;
+
+  const hardwareIssues = (compatibility?.issues || []).filter(
+    (issue) => issue.code !== 'INCOMPLETE_BUILD'
+  );
+
+  const hasCompatibilityError =
+    compatibility !== null && !compatibility.isCompatible;
 
   const handleChooseProduct = (product: HardwareProduct) => {
     setOrderSubmitted(false);
@@ -529,6 +551,60 @@ export function BuilderView({
                 </div>
               </div>
 
+              {/* Painel de Compatibilidade em Tempo Real */}
+              {filledCount > 0 && compatibility && (
+                <div className="py-4 border-b border-[var(--border)]">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[13px] font-medium text-[var(--ink)]">
+                      Diagnóstico de compatibilidade
+                    </span>
+                    <span className="font-mono text-[12px] text-[var(--muted)]">
+                      {isValidatingCompatibility
+                        ? 'Verificando...'
+                        : compatibility.isCompatible
+                        ? 'Compatível'
+                        : 'Atenção'}
+                    </span>
+                  </div>
+
+                  {hardwareIssues.length === 0 ? (
+                    <p className="m-0 text-[13px] text-[var(--c-text)]">
+                      Todas as peças selecionadas são compatíveis entre si.
+                    </p>
+                  ) : (
+                    <ul className="list-none m-0 p-0 space-y-2.5 mt-2">
+                      {hardwareIssues.map((issue) => (
+                        <li
+                          key={`${issue.code}-${issue.title}`}
+                          className="p-3 rounded-[8px] bg-[var(--stage)] border border-[var(--border)] text-[13px]"
+                        >
+                          <div className="flex items-center gap-2 font-medium text-[var(--ink)] mb-1">
+                            {issue.severity === 'Error' ||
+                            issue.severity === 'Warning' ? (
+                              <AlertTriangle
+                                size={14}
+                                className="shrink-0 text-[var(--ink)]"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Info
+                                size={14}
+                                className="shrink-0 text-[var(--muted)]"
+                                aria-hidden="true"
+                              />
+                            )}
+                            <span>{issue.title}</span>
+                          </div>
+                          <p className="m-0 text-[12px] text-[var(--c-text)] leading-relaxed">
+                            {issue.description}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <ul className="list-none m-0 p-0 divide-y divide-[var(--border)]">
                 {selectedList.map(({ slot, product }) => {
                   const isCurrentSlot = slot.category === activeCategory;
@@ -626,12 +702,14 @@ export function BuilderView({
 
               <button
                 type="button"
-                disabled={filledCount === 0}
+                disabled={filledCount === 0 || hasCompatibilityError}
                 onClick={() => setOrderSubmitted(true)}
                 className="btn btn--primary w-full"
               >
                 <span>
-                  {isComplete
+                  {hasCompatibilityError
+                    ? 'Resolva as incompatibilidades'
+                    : isComplete
                     ? 'Finalizar configuração'
                     : 'Salvar configuração'}
                 </span>
@@ -653,7 +731,7 @@ export function BuilderView({
                 </svg>
               </button>
 
-              {orderSubmitted && filledCount > 0 && (
+              {orderSubmitted && filledCount > 0 && !hasCompatibilityError && (
                 <div
                   role="status"
                   className="mt-4 p-4 rounded-[12px] bg-[var(--stage)] border border-[var(--border-strong)]"
@@ -690,7 +768,7 @@ export function BuilderView({
 
           <button
             type="button"
-            disabled={filledCount === 0}
+            disabled={filledCount === 0 || hasCompatibilityError}
             onClick={() => setOrderSubmitted(true)}
             className="btn btn--primary"
           >

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   BuildSelection,
+  CompatibilityReport,
   CreateProductInput,
   HardwareCategory,
   HardwareProduct,
@@ -11,11 +12,22 @@ import {
   createProductInDb,
   fetchAllProducts,
 } from './services/productApi';
+import {
+  createBuildSession,
+  deleteBuildSession,
+  getBuildSession,
+  removeBuildComponent,
+  selectBuildComponent,
+  validateBuildSelection,
+} from './services/builderApi';
+import { fetchAllInventory } from './services/inventoryApi';
 import { Navbar, type ActiveView } from './components/Navbar';
 import { FeedView } from './components/FeedView';
 import { BuilderView } from './components/BuilderView';
 import { CreateItemView } from './components/CreateItemView';
 import { Footer } from './components/Footer';
+
+const BUILD_SESSION_STORAGE_KEY = 'hardwareset_build_session_id';
 
 export function App() {
   const [activeView, setActiveView] = useState<ActiveView>('feed');
@@ -24,13 +36,33 @@ export function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [selection, setSelection] = useState<BuildSelection>({});
+  const [buildSessionId, setBuildSessionId] = useState<string | null>(() =>
+    localStorage.getItem(BUILD_SESSION_STORAGE_KEY)
+  );
+  const [compatibility, setCompatibility] =
+    useState<CompatibilityReport | null>(null);
+  const [isValidating, setIsValidating] = useState<boolean>(false);
+  const hasRestoredSessionRef = useRef(false);
 
   const loadCatalog = useCallback(async () => {
     setIsLoading(true);
     setApiError(null);
     try {
-      const items = await fetchAllProducts();
-      setProducts(items);
+      const [catalogItems, inventoryItems] = await Promise.all([
+        fetchAllProducts(),
+        fetchAllInventory().catch(() => []),
+      ]);
+
+      const stockByProductId = new Map(
+        inventoryItems.map((inv) => [inv.productId, inv.availableQuantity])
+      );
+
+      const merged = catalogItems.map((item) => ({
+        ...item,
+        availableQuantity: stockByProductId.get(item.id),
+      }));
+
+      setProducts(merged);
     } catch {
       setApiError('Não foi possível carregar o catálogo no momento.');
     } finally {
@@ -41,6 +73,97 @@ export function App() {
   useEffect(() => {
     void loadCatalog();
   }, [loadCatalog]);
+
+  // Restaura a sessão salva se existir um buildSessionId válido
+  useEffect(() => {
+    if (
+      hasRestoredSessionRef.current ||
+      !buildSessionId ||
+      products.length === 0
+    ) {
+      return;
+    }
+
+    hasRestoredSessionRef.current = true;
+
+    void (async () => {
+      try {
+        const session = await getBuildSession(buildSessionId);
+        const restoredSelection: BuildSelection = {};
+
+        for (const [catKey, comp] of Object.entries(session.components || {})) {
+          const category = catKey.toLowerCase() as HardwareCategory;
+          const matched = products.find(
+            (p) =>
+              (comp.productId && p.id === comp.productId) ||
+              p.name.toLowerCase() === comp.name.toLowerCase()
+          );
+          if (matched) {
+            restoredSelection[category] = matched;
+          }
+        }
+
+        if (Object.keys(restoredSelection).length > 0) {
+          setSelection(restoredSelection);
+          setCompatibility(session.compatibility);
+        }
+      } catch {
+        localStorage.removeItem(BUILD_SESSION_STORAGE_KEY);
+        setBuildSessionId(null);
+      }
+    })();
+  }, [buildSessionId, products]);
+
+  // Valida a compatibilidade via Gateway sempre que a seleção de peças mudar
+  useEffect(() => {
+    const selectedItems = Object.values(selection).filter(
+      (item): item is HardwareProduct => Boolean(item)
+    );
+
+    if (selectedItems.length === 0) {
+      setCompatibility(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsValidating(true);
+
+    void validateBuildSelection(selection)
+      .then((res) => {
+        if (!cancelled) {
+          setCompatibility(res.compatibility);
+        }
+      })
+      .catch(() => {
+        // Mantém a interface funcional caso o serviço de validação esteja indisponível
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsValidating(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selection]);
+
+  const syncFullSessionInGateway = useCallback(
+    async (nextSelection: BuildSelection) => {
+      try {
+        const session = await createBuildSession(
+          'Configuração Personalizada',
+          nextSelection
+        );
+        setBuildSessionId(session.id);
+        localStorage.setItem(BUILD_SESSION_STORAGE_KEY, session.id);
+        setCompatibility(session.compatibility);
+      } catch {
+        // Silencioso caso o gateway ainda não esteja ativo
+      }
+    },
+    []
+  );
 
   const totalPrice = useMemo(() => {
     const items = Object.values(selection).filter(
@@ -78,34 +201,63 @@ export function App() {
   };
 
   const handleLoadPrebuiltSetup = (setup: PrebuiltSetup) => {
-    setSelection({ ...setup.parts });
+    const nextSelection: BuildSelection = { ...setup.parts };
+    setSelection(nextSelection);
     setActiveCategory('gpu');
     setActiveView('builder');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    void syncFullSessionInGateway(nextSelection);
   };
 
   const handleSelectSinglePartAndBuild = (product: HardwareProduct) => {
-    setSelection((prev) => ({
-      ...prev,
+    const nextSelection: BuildSelection = {
+      ...selection,
       [product.category]: product,
-    }));
+    };
+    setSelection(nextSelection);
 
     const nextEmpty =
       SLOT_DEFINITIONS.find(
         (slot) =>
-          slot.category !== product.category && !selection[slot.category]
+          slot.category !== product.category && !nextSelection[slot.category]
       )?.category || product.category;
 
     setActiveCategory(nextEmpty);
     setActiveView('builder');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    void syncFullSessionInGateway(nextSelection);
   };
 
   const handleSelectPart = (product: HardwareProduct) => {
-    setSelection((prev) => ({
-      ...prev,
+    const nextSelection: BuildSelection = {
+      ...selection,
       [product.category]: product,
-    }));
+    };
+    setSelection(nextSelection);
+
+    void (async () => {
+      try {
+        if (!buildSessionId) {
+          const created = await createBuildSession(
+            'Configuração Personalizada',
+            nextSelection
+          );
+          setBuildSessionId(created.id);
+          localStorage.setItem(BUILD_SESSION_STORAGE_KEY, created.id);
+          setCompatibility(created.compatibility);
+        } else {
+          const updated = await selectBuildComponent(
+            buildSessionId,
+            product.category,
+            product
+          );
+          setCompatibility(updated.compatibility);
+        }
+      } catch {
+        // Fallback: se a sessão expirou, recria uma nova
+        void syncFullSessionInGateway(nextSelection);
+      }
+    })();
   };
 
   const handleRemovePart = (category: HardwareCategory) => {
@@ -114,18 +266,35 @@ export function App() {
       delete next[category];
       return next;
     });
+
+    if (buildSessionId) {
+      void removeBuildComponent(buildSessionId, category)
+        .then((updated) => setCompatibility(updated.compatibility))
+        .catch(() => {});
+    }
   };
 
   const handleClearBuild = () => {
     setSelection({});
+    setCompatibility(null);
     setActiveCategory('cpu');
+
+    if (buildSessionId) {
+      const idToDelete = buildSessionId;
+      setBuildSessionId(null);
+      localStorage.removeItem(BUILD_SESSION_STORAGE_KEY);
+      void deleteBuildSession(idToDelete).catch(() => {});
+    }
   };
 
   const handleCreateProduct = async (
     input: CreateProductInput
   ): Promise<HardwareProduct> => {
     const created = await createProductInDb(input);
-    setProducts((prev) => [created, ...prev]);
+    setProducts((prev) => [
+      { ...created, availableQuantity: 10 },
+      ...prev,
+    ]);
     return created;
   };
 
@@ -154,6 +323,8 @@ export function App() {
           <BuilderView
             products={products}
             selection={selection}
+            compatibility={compatibility}
+            isValidatingCompatibility={isValidating}
             activeCategory={activeCategory}
             onChangeCategory={setActiveCategory}
             onSelectPart={handleSelectPart}
