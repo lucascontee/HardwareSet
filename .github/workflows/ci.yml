@@ -19,8 +19,8 @@ jobs:
 
 ai-review:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    
+    runs-on: self-hosted 
+       
     permissions:
       pull-requests: write
 
