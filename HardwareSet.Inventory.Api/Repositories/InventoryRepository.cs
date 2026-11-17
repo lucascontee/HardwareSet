@@ -55,6 +55,28 @@ public class InventoryRepository : IInventoryRepository
             .Where(x => productIds.Contains(x.ProductId))
             .ToDictionaryAsync(x => x.ProductId, cancellationToken);
 
+        // Garante que itens oriundos do seed inicial do catálogo tenham registro inicial de estoque
+        foreach (var reqItem in items)
+        {
+            if (!stockItems.ContainsKey(reqItem.ProductId) &&
+                !string.IsNullOrWhiteSpace(reqItem.ProductName))
+            {
+                var autoSeeded = new InventoryItem
+                {
+                    ProductId = reqItem.ProductId,
+                    ProductName = reqItem.ProductName,
+                    Category = (reqItem.Category ?? string.Empty).ToLowerInvariant(),
+                    AvailableQuantity = 10,
+                    ReservedQuantity = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _dbContext.InventoryItems.Add(autoSeeded);
+                stockItems[reqItem.ProductId] = autoSeeded;
+            }
+        }
+
         var unavailableIds = new List<string>();
 
         foreach (var reqItem in items)
@@ -93,5 +115,33 @@ public class InventoryRepository : IInventoryRepository
             Success = true,
             Message = "Estoque reservado com sucesso para todos os componentes."
         };
+    }
+
+    public async Task ReleaseBatchAsync(
+        IReadOnlyList<ReserveStockItemDto> items,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var productIds = items.Select(i => i.ProductId).Distinct().ToList();
+        var stockItems = await _dbContext.InventoryItems
+            .Where(x => productIds.Contains(x.ProductId))
+            .ToDictionaryAsync(x => x.ProductId, cancellationToken);
+
+        foreach (var reqItem in items)
+        {
+            if (!stockItems.TryGetValue(reqItem.ProductId, out var stock))
+            {
+                continue;
+            }
+
+            var quantityToRelease = Math.Min(reqItem.Quantity, stock.ReservedQuantity);
+            stock.ReservedQuantity -= quantityToRelease;
+            stock.AvailableQuantity += reqItem.Quantity;
+            stock.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 }

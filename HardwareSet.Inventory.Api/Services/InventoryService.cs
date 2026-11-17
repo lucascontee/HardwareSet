@@ -19,9 +19,6 @@ public class InventoryService : IInventoryService
     public Task<InventoryItem?> GetByProductIdAsync(string productId, CancellationToken cancellationToken = default) =>
         _repository.GetByProductIdAsync(productId, cancellationToken);
 
-    /// <summary>
-    /// Inicializa o registro de estoque de uma peça de forma idempotente (seguro para reprocessamento de mensagens).
-    /// </summary>
     public async Task<InventoryItem> InitializeProductStockAsync(
         CreateInventoryItemRequest request,
         CancellationToken cancellationToken = default)
@@ -72,4 +69,9 @@ public class InventoryService : IInventoryService
         IReadOnlyList<ReserveStockItemDto> items,
         CancellationToken cancellationToken = default) =>
         _repository.ReserveBatchAsync(items, cancellationToken);
+
+    public Task ReleaseBatchAsync(
+        IReadOnlyList<ReserveStockItemDto> items,
+        CancellationToken cancellationToken = default) =>
+        _repository.ReleaseBatchAsync(items, cancellationToken);
 }

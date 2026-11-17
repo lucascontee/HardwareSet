@@ -10,4 +10,5 @@ public interface IInventoryRepository
     Task<InventoryItem> CreateAsync(InventoryItem item, CancellationToken cancellationToken = default);
     Task<InventoryItem> UpdateAsync(InventoryItem item, CancellationToken cancellationToken = default);
     Task<ReserveBatchResponse> ReserveBatchAsync(IReadOnlyList<ReserveStockItemDto> items, CancellationToken cancellationToken = default);
+    Task ReleaseBatchAsync(IReadOnlyList<ReserveStockItemDto> items, CancellationToken cancellationToken = default);
 }

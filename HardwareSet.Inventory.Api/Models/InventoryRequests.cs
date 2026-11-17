@@ -19,6 +19,8 @@ public class AdjustStockRequest
 public class ReserveStockItemDto
 {
     public string ProductId { get; set; } = string.Empty;
+    public string? ProductName { get; set; }
+    public string? Category { get; set; }
     public int Quantity { get; set; } = 1;
 }
 
