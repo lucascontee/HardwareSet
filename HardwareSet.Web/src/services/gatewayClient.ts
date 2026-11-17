@@ -9,6 +9,7 @@ export const GATEWAY_ROUTES = {
   products: '/api/products',
   builds: '/api/builds',
   inventory: '/api/inventory',
+  orders: '/api/orders',
 } as const;
 
 export function buildGatewayUrl(path: string): string {

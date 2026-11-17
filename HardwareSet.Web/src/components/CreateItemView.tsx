@@ -46,9 +46,9 @@ export function CreateItemView({
     new Date().toISOString().slice(0, 10)
   );
   const [attributeRows, setAttributeRows] = useState<AttributeRow[]>([
-    { id: 'attr-1', key: 'Memória de vídeo', value: '' },
-    { id: 'attr-2', key: 'Arquitetura', value: '' },
-    { id: 'attr-3', key: 'Interface', value: '' },
+    { id: 'attr-1', key: 'VRAM', value: '' },
+    { id: 'attr-2', key: 'Barramento', value: '' },
+    { id: 'attr-3', key: 'PCIe', value: '' },
   ]);
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -197,15 +197,15 @@ export function CreateItemView({
     });
 
     try {
-      const attributesMap: Record<string, string> = {
-        category,
-      };
+      const attributesMap: Record<string, string> = {};
 
       if (summarySpec.trim()) {
-        attributesMap.summary = summarySpec.trim();
+        attributesMap['Resumo'] = summarySpec.trim();
       }
       if (wattageText.trim()) {
-        attributesMap.wattage = wattageText.trim();
+        attributesMap[category === 'psu' ? 'Potência' : 'TDP'] = `${wattageText
+          .trim()
+          .replace(/W$/i, '')}W`;
       }
 
       attributeRows.forEach((row) => {
@@ -561,7 +561,7 @@ export function CreateItemView({
                           onChange={(e) =>
                             handleAttributeChange(row.id, 'key', e.target.value)
                           }
-                          placeholder="Propriedade (ex: Soquete)"
+                          placeholder="Propriedade (ex: Socket)"
                           className="w-full min-h-[48px] px-3.5 rounded-[8px] bg-[var(--g-alt)] border border-[var(--border)] text-[15px] text-[var(--ink)] placeholder:text-[var(--muted)]"
                         />
                       </div>

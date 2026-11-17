@@ -117,3 +117,34 @@ export interface InventoryItemDto {
   reservedQuantity: number;
   updatedAt: string;
 }
+
+export type OrderStatus =
+  | 'Pending'
+  | 'ReservingStock'
+  | 'ProcessingPayment'
+  | 'Confirmed'
+  | 'FailedOutOfStock'
+  | 'FailedPaymentCompensated';
+
+export interface OrderItemDto {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  category: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export interface OrderDto {
+  id: string;
+  customerName: string;
+  paymentMethod: string;
+  status: OrderStatus;
+  statusMessage: string;
+  transactionId?: string | null;
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItemDto[];
+}

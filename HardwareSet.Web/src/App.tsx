@@ -5,6 +5,7 @@ import type {
   CreateProductInput,
   HardwareCategory,
   HardwareProduct,
+  OrderDto,
   PrebuiltSetup,
 } from './types/hardware';
 import { SLOT_DEFINITIONS } from './data/hardwareCatalog';
@@ -21,6 +22,10 @@ import {
   validateBuildSelection,
 } from './services/builderApi';
 import { fetchAllInventory } from './services/inventoryApi';
+import {
+  createOrderFromSelection,
+  type SubmitOrderOptions,
+} from './services/orderApi';
 import { Navbar, type ActiveView } from './components/Navbar';
 import { FeedView } from './components/FeedView';
 import { BuilderView } from './components/BuilderView';
@@ -254,7 +259,6 @@ export function App() {
           setCompatibility(updated.compatibility);
         }
       } catch {
-        // Fallback: se a sessão expirou, recria uma nova
         void syncFullSessionInGateway(nextSelection);
       }
     })();
@@ -285,6 +289,14 @@ export function App() {
       localStorage.removeItem(BUILD_SESSION_STORAGE_KEY);
       void deleteBuildSession(idToDelete).catch(() => {});
     }
+  };
+
+  const handleSubmitOrder = async (
+    options: SubmitOrderOptions
+  ): Promise<OrderDto> => {
+    const order = await createOrderFromSelection(selection, options);
+    void loadCatalog();
+    return order;
   };
 
   const handleCreateProduct = async (
@@ -330,6 +342,7 @@ export function App() {
             onSelectPart={handleSelectPart}
             onRemovePart={handleRemovePart}
             onClearBuild={handleClearBuild}
+            onSubmitOrder={handleSubmitOrder}
             onLoadPrebuilt={handleLoadPrebuiltSetup}
             onOpenCreateItem={() => handleNavigate('create')}
             onBackToFeed={() => handleNavigate('feed', 'top')}
