@@ -35,9 +35,8 @@ public class ProductService : IProductService
     {
         product.Id = null;
         if (product.PurchaseDate == default)
-        {
             product.PurchaseDate = DateTime.UtcNow;
-        }
+        
 
         if (string.IsNullOrWhiteSpace(product.Category) &&
             product.Attributes.TryGetValue("category", out var attrCategory))
