@@ -1,0 +1,46 @@
+@OrderApi_HostAddress = http://localhost:5191
+
+### 1. Criar pedido com pagamento aprovado (Fluxo Feliz da Saga)
+POST {{OrderApi_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "Lucas Conte",
+  "paymentMethod": "pix",
+  "simulatePaymentFailure": false,
+  "items": [
+    {
+      "productId": "6af7983c92614215520ddef9",
+      "productName": "Ryzen 7 5700X",
+      "category": "cpu",
+      "unitPrice": 1290.00,
+      "quantity": 1
+    },
+    {
+      "productId": "6af7983c92614215520ddef8",
+      "productName": "RTX 5070",
+      "category": "gpu",
+      "unitPrice": 4890.00,
+      "quantity": 1
+    }
+  ]
+}
+
+### 2. Criar pedido simulando recusa do cartão (Aciona Transação Compensatória / Rollback de Estoque)
+POST {{OrderApi_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "Lucas Conte",
+  "paymentMethod": "card",
+  "simulatePaymentFailure": true,
+  "items": [
+    {
+      "productId": "6af7983c92614215520ddef8",
+      "productName": "RTX 5070",
+      "category": "gpu",
+      "unitPrice": 4890.00,
+      "quantity": 1
+    }
+  ]
+}
