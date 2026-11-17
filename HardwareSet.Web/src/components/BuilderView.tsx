@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
   Cpu,
   HardDrive,
+  Info,
   Layers,
   Monitor,
   Plus,
@@ -15,10 +17,13 @@ import {
 } from 'lucide-react';
 import type {
   BuildSelection,
+  CompatibilityReport,
   HardwareCategory,
   HardwareProduct,
+  OrderDto,
   PrebuiltSetup,
 } from '../types/hardware';
+import type { SubmitOrderOptions } from '../services/orderApi';
 import {
   SLOT_DEFINITIONS,
   buildDynamicSetupsFromCatalog,
@@ -29,11 +34,14 @@ import { AnimatedPrice } from './AnimatedPrice';
 interface BuilderViewProps {
   products: HardwareProduct[];
   selection: BuildSelection;
+  compatibility: CompatibilityReport | null;
+  isValidatingCompatibility: boolean;
   activeCategory: HardwareCategory;
   onChangeCategory: (category: HardwareCategory) => void;
   onSelectPart: (product: HardwareProduct) => void;
   onRemovePart: (category: HardwareCategory) => void;
   onClearBuild: () => void;
+  onSubmitOrder: (options: SubmitOrderOptions) => Promise<OrderDto>;
   onLoadPrebuilt: (setup: PrebuiltSetup) => void;
   onOpenCreateItem: () => void;
   onBackToFeed: () => void;
@@ -61,17 +69,24 @@ function getCategoryIcon(category: HardwareCategory) {
 export function BuilderView({
   products,
   selection,
+  compatibility,
+  isValidatingCompatibility,
   activeCategory,
   onChangeCategory,
   onSelectPart,
   onRemovePart,
   onClearBuild,
+  onSubmitOrder,
   onLoadPrebuilt,
   onOpenCreateItem,
   onBackToFeed,
 }: BuilderViewProps) {
   const [autoAdvance, setAutoAdvance] = useState(true);
-  const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card'>('pix');
+  const [simulatePaymentFailure, setSimulatePaymentFailure] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [orderResult, setOrderResult] = useState<OrderDto | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false);
 
   const currentSlotIndex = SLOT_DEFINITIONS.findIndex(
@@ -98,15 +113,31 @@ export function BuilderView({
     0
   );
 
-  const totalWattage = selectedList.reduce(
+  const fallbackWattage = selectedList.reduce(
     (sum, item) => sum + (item.product ? item.product.wattage : 0),
     0
   );
 
-  const psuCapacity = 650;
+  const totalWattage =
+    compatibility && filledCount > 0
+      ? compatibility.estimatedTdpWatts
+      : fallbackWattage;
+
+  const psuCapacity =
+    compatibility?.providedPsuWatts ||
+    compatibility?.recommendedPsuWatts ||
+    650;
+
+  const hardwareIssues = (compatibility?.issues || []).filter(
+    (issue) => issue.code !== 'INCOMPLETE_BUILD'
+  );
+
+  const hasCompatibilityError =
+    compatibility !== null && !compatibility.isCompatible;
 
   const handleChooseProduct = (product: HardwareProduct) => {
-    setOrderSubmitted(false);
+    setOrderResult(null);
+    setOrderError(null);
     onSelectPart(product);
 
     if (autoAdvance) {
@@ -122,6 +153,32 @@ export function BuilderView({
           onChangeCategory(targetSlot.category);
         }, 220);
       }
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (filledCount === 0 || hasCompatibilityError || isSubmittingOrder) {
+      return;
+    }
+
+    setIsSubmittingOrder(true);
+    setOrderError(null);
+    setOrderResult(null);
+
+    try {
+      const createdOrder = await onSubmitOrder({
+        paymentMethod,
+        simulatePaymentFailure,
+      });
+      setOrderResult(createdOrder);
+    } catch (err) {
+      setOrderError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível concluir o pedido no momento.'
+      );
+    } finally {
+      setIsSubmittingOrder(false);
     }
   };
 
@@ -169,7 +226,8 @@ export function BuilderView({
                 key={setup.id}
                 type="button"
                 onClick={() => {
-                  setOrderSubmitted(false);
+                  setOrderResult(null);
+                  setOrderError(null);
                   onLoadPrebuilt(setup);
                 }}
                 className="min-h-[40px] px-3.5 rounded-[8px] text-[13px] font-medium bg-[var(--card)] text-[var(--c-text)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--ink)] cursor-pointer transition-colors"
@@ -496,7 +554,8 @@ export function BuilderView({
                   <button
                     type="button"
                     onClick={() => {
-                      setOrderSubmitted(false);
+                      setOrderResult(null);
+                      setOrderError(null);
                       onClearBuild();
                     }}
                     className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-0 cursor-pointer min-h-[36px]"
@@ -528,6 +587,60 @@ export function BuilderView({
                   />
                 </div>
               </div>
+
+              {/* Painel de Compatibilidade em Tempo Real */}
+              {filledCount > 0 && compatibility && (
+                <div className="py-4 border-b border-[var(--border)]">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[13px] font-medium text-[var(--ink)]">
+                      Diagnóstico de compatibilidade
+                    </span>
+                    <span className="font-mono text-[12px] text-[var(--muted)]">
+                      {isValidatingCompatibility
+                        ? 'Verificando...'
+                        : compatibility.isCompatible
+                        ? 'Compatível'
+                        : 'Atenção'}
+                    </span>
+                  </div>
+
+                  {hardwareIssues.length === 0 ? (
+                    <p className="m-0 text-[13px] text-[var(--c-text)]">
+                      Todas as peças selecionadas são compatíveis entre si.
+                    </p>
+                  ) : (
+                    <ul className="list-none m-0 p-0 space-y-2.5 mt-2">
+                      {hardwareIssues.map((issue) => (
+                        <li
+                          key={`${issue.code}-${issue.title}`}
+                          className="p-3 rounded-[8px] bg-[var(--stage)] border border-[var(--border)] text-[13px]"
+                        >
+                          <div className="flex items-center gap-2 font-medium text-[var(--ink)] mb-1">
+                            {issue.severity === 'Error' ||
+                            issue.severity === 'Warning' ? (
+                              <AlertTriangle
+                                size={14}
+                                className="shrink-0 text-[var(--ink)]"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Info
+                                size={14}
+                                className="shrink-0 text-[var(--muted)]"
+                                aria-hidden="true"
+                              />
+                            )}
+                            <span>{issue.title}</span>
+                          </div>
+                          <p className="m-0 text-[12px] text-[var(--c-text)] leading-relaxed">
+                            {issue.description}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               <ul className="list-none m-0 p-0 divide-y divide-[var(--border)]">
                 {selectedList.map(({ slot, product }) => {
@@ -617,23 +730,75 @@ export function BuilderView({
                 />
               </div>
 
-              <div className="flex items-center justify-between text-[13px] text-[var(--muted)] mb-6 tabular-price">
+              <div className="flex items-center justify-between text-[13px] text-[var(--muted)] mb-5 tabular-price">
                 <span>À vista no PIX (10% off)</span>
                 <span className="font-mono text-[var(--c-text)]">
                   {formatBRL(totalPrice * 0.9)}
                 </span>
               </div>
 
+              {/* Opções de Pagamento para o Pedido */}
+              {filledCount > 0 && (
+                <div className="mb-5 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('pix')}
+                      className={`min-h-[38px] px-3 rounded-[8px] text-[13px] font-medium border cursor-pointer transition-colors ${
+                        paymentMethod === 'pix'
+                          ? 'bg-[var(--card-hover)] border-[var(--action)] text-[var(--ink)]'
+                          : 'bg-[var(--stage)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--ink)]'
+                      }`}
+                    >
+                      PIX (-10%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('card')}
+                      className={`min-h-[38px] px-3 rounded-[8px] text-[13px] font-medium border cursor-pointer transition-colors ${
+                        paymentMethod === 'card'
+                          ? 'bg-[var(--card-hover)] border-[var(--action)] text-[var(--ink)]'
+                          : 'bg-[var(--stage)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--ink)]'
+                      }`}
+                    >
+                      Cartão de Crédito
+                    </button>
+                  </div>
+
+                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--muted)] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={simulatePaymentFailure}
+                      onChange={(e) =>
+                        setSimulatePaymentFailure(e.target.checked)
+                      }
+                      className="w-3.5 h-3.5 rounded accent-[var(--action)] cursor-pointer"
+                    />
+                    <span>
+                      Simular recusa de pagamento (testar estorno de estoque)
+                    </span>
+                  </label>
+                </div>
+              )}
+
               <button
                 type="button"
-                disabled={filledCount === 0}
-                onClick={() => setOrderSubmitted(true)}
+                disabled={
+                  filledCount === 0 ||
+                  hasCompatibilityError ||
+                  isSubmittingOrder
+                }
+                onClick={() => void handleCheckout()}
                 className="btn btn--primary w-full"
               >
                 <span>
-                  {isComplete
+                  {isSubmittingOrder
+                    ? 'Processando pedido...'
+                    : hasCompatibilityError
+                    ? 'Resolva as incompatibilidades'
+                    : isComplete
                     ? 'Finalizar configuração'
-                    : 'Salvar configuração'}
+                    : 'Finalizar com peças selecionadas'}
                 </span>
                 <svg
                   className="m-arrow"
@@ -653,17 +818,50 @@ export function BuilderView({
                 </svg>
               </button>
 
-              {orderSubmitted && filledCount > 0 && (
+              {orderError && (
                 <div
-                  role="status"
+                  role="alert"
                   className="mt-4 p-4 rounded-[12px] bg-[var(--stage)] border border-[var(--border-strong)]"
                 >
                   <p className="m-0 text-[14px] font-medium text-[var(--ink)] mb-1">
-                    Configuração registrada com sucesso.
+                    Não foi possível concluir o pedido
                   </p>
-                  <p className="m-0 text-[13px] text-[var(--c-text)] tabular-price">
-                    Orçamento total de {formatBRL(totalPrice)} calculado.
+                  <p className="m-0 text-[13px] text-[var(--c-text)]">
+                    {orderError}
                   </p>
+                </div>
+              )}
+
+              {orderResult && (
+                <div
+                  role="status"
+                  className="mt-4 p-4 rounded-[12px] bg-[var(--stage)] border border-[var(--border-strong)] space-y-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="m-0 text-[14px] font-medium text-[var(--ink)]">
+                      {orderResult.status === 'Confirmed'
+                        ? 'Pedido confirmado'
+                        : orderResult.status === 'FailedPaymentCompensated'
+                        ? 'Pagamento recusado · Estoque estornado'
+                        : orderResult.status === 'FailedOutOfStock'
+                        ? 'Estoque indisponível'
+                        : 'Pedido em processamento'}
+                    </p>
+                    <span className="font-mono text-[12px] text-[var(--muted)]">
+                      #{orderResult.id.slice(0, 8).toUpperCase()}
+                    </span>
+                  </div>
+
+                  <p className="m-0 text-[13px] text-[var(--c-text)] leading-relaxed">
+                    {orderResult.statusMessage}
+                  </p>
+
+                  {orderResult.transactionId && (
+                    <p className="m-0 font-mono text-[12px] text-[var(--muted)]">
+                      Transação: {orderResult.transactionId} · Total:{' '}
+                      {formatBRL(orderResult.totalAmount)}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -690,11 +888,13 @@ export function BuilderView({
 
           <button
             type="button"
-            disabled={filledCount === 0}
-            onClick={() => setOrderSubmitted(true)}
+            disabled={
+              filledCount === 0 || hasCompatibilityError || isSubmittingOrder
+            }
+            onClick={() => void handleCheckout()}
             className="btn btn--primary"
           >
-            <span>Finalizar</span>
+            <span>{isSubmittingOrder ? 'Processando...' : 'Finalizar'}</span>
           </button>
         </div>
 

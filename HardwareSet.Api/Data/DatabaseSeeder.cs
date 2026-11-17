@@ -36,12 +36,12 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "AMD Radeon / ASUS",
-                ["tagline"] = "Arquitetura RDNA 4 · 16GB GDDR6 · Ray Tracing",
-                ["vram"] = "16GB GDDR6",
-                ["bus"] = "256-bit",
-                ["interface"] = "PCIe 5.0 x16",
-                ["tdp"] = "220W"
+                ["Marca"] = "AMD Radeon / ASUS",
+                ["Resumo"] = "Arquitetura RDNA 4 · 16GB GDDR6 · Ray Tracing",
+                ["VRAM"] = "16GB GDDR6",
+                ["Barramento"] = "256-bit",
+                ["PCIe"] = "PCIe 5.0 x16",
+                ["TDP"] = "220W"
             }
         },
         new Product
@@ -53,12 +53,12 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "NVIDIA GeForce",
-                ["tagline"] = "Arquitetura Blackwell · 12GB GDDR7 · DLSS 4",
-                ["vram"] = "12GB GDDR7",
-                ["bus"] = "192-bit",
-                ["interface"] = "PCIe 5.0 x16",
-                ["tdp"] = "250W"
+                ["Marca"] = "NVIDIA GeForce",
+                ["Resumo"] = "Arquitetura Blackwell · 12GB GDDR7 · DLSS 4",
+                ["VRAM"] = "12GB GDDR7",
+                ["Barramento"] = "192-bit",
+                ["PCIe"] = "PCIe 5.0 x16",
+                ["TDP"] = "250W"
             }
         },
         new Product
@@ -70,12 +70,13 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "AMD Ryzen",
-                ["tagline"] = "8 Núcleos · 16 Threads · Boost até 4.6 GHz · AM4",
-                ["cores"] = "8C / 16T",
-                ["boostClock"] = "4.6 GHz",
-                ["cache"] = "36MB (L2+L3)",
-                ["tdp"] = "65W"
+                ["Marca"] = "AMD Ryzen",
+                ["Resumo"] = "8 Núcleos · 16 Threads · Boost até 4.6 GHz · Socket AM4",
+                ["Socket"] = "AM4",
+                ["Núcleos / Threads"] = "8 Núcleos / 16 Threads",
+                ["Clock Boost"] = "Até 4.6 GHz",
+                ["Cache"] = "36MB (L2 + L3)",
+                ["TDP"] = "65W"
             }
         },
         new Product
@@ -87,12 +88,12 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "Gigabyte Aorus",
-                ["tagline"] = "Micro-ATX · Chipset AMD B550 · PCIe 4.0 · Dual M.2",
-                ["socket"] = "AM4",
-                ["formFactor"] = "Micro-ATX",
-                ["memory"] = "4x DDR4 até 128GB",
-                ["pcie"] = "PCIe 4.0 x16"
+                ["Marca"] = "Gigabyte Aorus",
+                ["Resumo"] = "Micro-ATX · Chipset AMD B550 · PCIe 4.0 · Dual M.2",
+                ["Socket"] = "AM4",
+                ["Formato"] = "Micro-ATX",
+                ["Memória"] = "4x DDR4 até 128GB",
+                ["PCIe"] = "PCIe 4.0 x16"
             }
         },
         new Product
@@ -104,12 +105,13 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "ASUS Republic of Gamers",
-                ["tagline"] = "ATX · VRM 12+2 Fases · Áudio SupremeFX · 2.5Gb LAN",
-                ["socket"] = "AM4",
-                ["formFactor"] = "ATX",
-                ["vrm"] = "12+2 Power Stages",
-                ["networking"] = "Intel 2.5Gb Ethernet"
+                ["Marca"] = "ASUS Republic of Gamers",
+                ["Resumo"] = "ATX · VRM 12+2 Fases · Áudio SupremeFX · Rede 2.5Gb",
+                ["Socket"] = "AM4",
+                ["Formato"] = "ATX",
+                ["Memória"] = "4x DDR4 até 128GB",
+                ["VRM"] = "12+2 Fases",
+                ["Rede"] = "2.5Gb Ethernet"
             }
         },
         new Product
@@ -121,12 +123,12 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "Redragon",
-                ["tagline"] = "8GB DDR4 · 3200MHz · Dissipador em Alumínio",
-                ["capacity"] = "8GB DDR4",
-                ["frequency"] = "3200 MT/s",
-                ["latency"] = "CL16",
-                ["voltage"] = "1.35V XMP 2.0"
+                ["Marca"] = "Redragon",
+                ["Resumo"] = "8GB DDR4 · 3200MHz · Dissipador em Alumínio",
+                ["Capacidade"] = "8GB DDR4",
+                ["Frequência"] = "3200 MT/s",
+                ["Latência"] = "CL16",
+                ["Tensão"] = "1.35V XMP 2.0"
             }
         },
         new Product
@@ -138,12 +140,12 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "Corsair CX650",
-                ["tagline"] = "650W · Certificação 80 Plus Bronze · PFC Ativo",
-                ["wattage"] = "650W Reais",
-                ["efficiency"] = "80 Plus Bronze",
-                ["pfc"] = "PFC Ativo",
-                ["cooling"] = "Fan 120mm Low-Noise"
+                ["Marca"] = "Corsair CX650",
+                ["Resumo"] = "650W · Certificação 80 Plus Bronze · PFC Ativo",
+                ["Potência"] = "650W Reais",
+                ["Eficiência"] = "80 Plus Bronze",
+                ["PFC"] = "PFC Ativo",
+                ["Refrigeração"] = "Ventoinha 120mm Silenciosa"
             }
         },
         new Product
@@ -155,12 +157,12 @@ public static class DatabaseSeeder
             PurchaseDate = DateTime.UtcNow,
             Attributes = new Dictionary<string, string>
             {
-                ["brand"] = "SanDisk / WD Black",
-                ["tagline"] = "1TB M.2 2280 · PCIe Gen4 x4 · Leitura até 7.250 MB/s",
-                ["capacity"] = "1TB NVMe",
-                ["seqRead"] = "7.250 MB/s",
-                ["seqWrite"] = "6.900 MB/s",
-                ["interface"] = "M.2 PCIe Gen4 x4"
+                ["Marca"] = "SanDisk / WD Black",
+                ["Resumo"] = "1TB M.2 2280 · PCIe Gen4 x4 · Leitura até 7.250 MB/s",
+                ["Capacidade"] = "1TB NVMe",
+                ["Leitura Sequencial"] = "7.250 MB/s",
+                ["Gravação Sequencial"] = "6.900 MB/s",
+                ["PCIe"] = "M.2 PCIe Gen4 x4"
             }
         }
     ];

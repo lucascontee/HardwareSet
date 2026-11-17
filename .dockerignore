@@ -1,0 +1,11 @@
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/.agents
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/*.user
+**/*.suo
