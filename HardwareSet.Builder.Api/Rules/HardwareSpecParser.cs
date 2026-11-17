@@ -19,7 +19,7 @@ public static partial class HardwareSpecParser
 
     public static string? ExtractSocket(BuildComponent component)
     {
-        if (TryGetAttribute(component, out var explicitSocket, "socket", "soquete"))
+        if (TryGetAttribute(component, out var explicitSocket, "Socket", "socket", "soquete"))
         {
             var normalized = NormalizeSocket(explicitSocket);
             if (!string.IsNullOrWhiteSpace(normalized))
@@ -44,7 +44,16 @@ public static partial class HardwareSpecParser
 
     public static string? ExtractMemoryGeneration(BuildComponent component)
     {
-        if (TryGetAttribute(component, out var memAttr, "ramType", "memoryType", "memory", "capacity", "memoria"))
+        if (TryGetAttribute(
+            component,
+            out var memAttr,
+            "Memória",
+            "Memoria",
+            "Capacidade",
+            "memory",
+            "capacity",
+            "ramType",
+            "memoryType"))
         {
             var match = DdrRegex().Match(memAttr);
             if (match.Success)
@@ -69,7 +78,7 @@ public static partial class HardwareSpecParser
     {
         foreach (var key in preferredKeys)
         {
-            if (component.Attributes.TryGetValue(key, out var rawValue) && !string.IsNullOrWhiteSpace(rawValue))
+            if (TryGetAttribute(component, out var rawValue, key))
             {
                 var parsed = ParseWattsFromText(rawValue);
                 if (parsed.HasValue)
@@ -113,13 +122,13 @@ public static partial class HardwareSpecParser
 
         if (components.TryGetValue(HardwareCategory.Cpu, out var cpu))
         {
-            var cpuTdp = ExtractWatts(cpu, "tdp", "power", "consumo") ?? 95;
+            var cpuTdp = ExtractWatts(cpu, "TDP", "tdp", "Potência", "potencia", "consumo", "power") ?? 95;
             totalTdp += cpuTdp;
         }
 
         if (components.TryGetValue(HardwareCategory.Gpu, out var gpu))
         {
-            var gpuTdp = ExtractWatts(gpu, "tdp", "power", "consumo") ?? 200;
+            var gpuTdp = ExtractWatts(gpu, "TDP", "tdp", "Potência", "potencia", "consumo", "power") ?? 200;
             totalTdp += gpuTdp;
         }
 
@@ -129,7 +138,7 @@ public static partial class HardwareSpecParser
         int? providedPsuWatts = null;
         if (components.TryGetValue(HardwareCategory.Psu, out var psu))
         {
-            providedPsuWatts = ExtractWatts(psu, "wattage", "potencia", "power", "tdp");
+            providedPsuWatts = ExtractWatts(psu, "Potência", "potencia", "wattage", "TDP", "tdp", "power");
         }
 
         return (totalTdp, rawRecommended, providedPsuWatts);
@@ -161,10 +170,14 @@ public static partial class HardwareSpecParser
     {
         foreach (var key in keys)
         {
-            if (component.Attributes.TryGetValue(key, out var found) && !string.IsNullOrWhiteSpace(found))
+            foreach (var (attrKey, attrValue) in component.Attributes)
             {
-                value = found;
-                return true;
+                if (string.Equals(attrKey.Trim(), key, StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(attrValue))
+                {
+                    value = attrValue;
+                    return true;
+                }
             }
         }
 

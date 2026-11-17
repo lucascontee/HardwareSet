@@ -21,8 +21,8 @@ public class CpuMotherboardSocketRule : ICompatibilityRule
             {
                 Code = "SOCKET_UNVERIFIED",
                 Severity = CompatibilitySeverity.Warning,
-                Title = "Soquete não identificado automaticamente",
-                Description = $"Não foi possível confirmar o soquete entre '{cpu.Name}' e '{motherboard.Name}'. Verifique o atributo 'socket' nas especificações.",
+                Title = "Socket não identificado automaticamente",
+                Description = $"Não foi possível confirmar o Socket entre '{cpu.Name}' e '{motherboard.Name}'. Verifique o atributo 'Socket' nas especificações.",
                 AffectedCategories = [HardwareCategory.Cpu, HardwareCategory.Motherboard]
             };
             yield break;
@@ -34,8 +34,8 @@ public class CpuMotherboardSocketRule : ICompatibilityRule
             {
                 Code = "SOCKET_MISMATCH",
                 Severity = CompatibilitySeverity.Error,
-                Title = "Incompatibilidade de soquete (CPU e Placa-Mãe)",
-                Description = $"O processador '{cpu.Name}' utiliza o soquete {cpuSocket}, mas a placa-mãe '{motherboard.Name}' possui soquete {mbSocket}.",
+                Title = "Incompatibilidade de Socket (CPU e Placa-Mãe)",
+                Description = $"O processador '{cpu.Name}' utiliza o Socket {cpuSocket}, mas a placa-mãe '{motherboard.Name}' possui Socket {mbSocket}.",
                 AffectedCategories = [HardwareCategory.Cpu, HardwareCategory.Motherboard]
             };
         }
