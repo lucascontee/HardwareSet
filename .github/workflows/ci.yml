@@ -16,8 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-ai-review:
+  ai-review:
     if: github.event_name == 'pull_request'
     runs-on: self-hosted 
        
@@ -105,7 +104,6 @@ ai-review:
 
       - name: Build production bundle (TypeScript + Vite)
         run: npm run build
-
 
   docker-build-verify:
     name: Docker Compose & Multi-Stage Build Verify
