@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHealthChecks();
+
 // Configure PostgreSQL with Entity Framework Core
 builder.Services.AddDbContext<InventoryDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("InventoryPostgres")));
@@ -15,10 +17,11 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 
-
 builder.Services.AddMassTransit(bus =>
 {
     bus.AddConsumer<ProductCreatedConsumer>();
+    bus.AddConsumer<ReserveOrderStockConsumer>();
+    bus.AddConsumer<ReleaseOrderStockConsumer>();
 
     bus.UsingRabbitMq((context, cfg) =>
     {
@@ -69,6 +72,7 @@ app.UseCors("ReactAppPolicy");
 
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();

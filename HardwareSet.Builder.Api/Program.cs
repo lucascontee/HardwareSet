@@ -6,6 +6,8 @@ using HardwareSet.Builder.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHealthChecks();
+
 // Configure Redis
 builder.Services.Configure<RedisDbSettings>(
     builder.Configuration.GetSection(RedisDbSettings.SectionName));
@@ -58,6 +60,7 @@ app.UseCors("ReactAppPolicy");
 
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
