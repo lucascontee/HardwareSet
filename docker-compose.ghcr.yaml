@@ -1,0 +1,187 @@
+# =====================================================================
+# docker-compose.ghcr.yaml
+# Executa o ecossistema HardwareSet puxando diretamente as imagens
+# pré-compiladas do GitHub Container Registry (ghcr.io/lucascontee/...)
+# sem precisar compilar código localmente.
+#
+# Como usar:
+#   docker compose -f docker-compose.ghcr.yaml pull
+#   docker compose -f docker-compose.ghcr.yaml up -d
+# =====================================================================
+
+services:
+  # ==========================================
+  # 1. INFRAESTRUTURA (BANCOS E MENSAGERIA)
+  # ==========================================
+  mongodb:
+    image: mongo:latest
+    container_name: hardware_set
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secretpassword
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo_express_ui
+    restart: always
+    environment:
+      ME_CONFIG_BASICAUTH: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: password123
+      ME_CONFIG_MONGODB_URL: "mongodb://admin:secretpassword@mongodb:27017/?authSource=admin"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    restart: always
+    command: redis-server --requirepass password123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis_ui
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:password123
+    ports:
+      - "8082:8081"
+    depends_on:
+      - redis
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: inventory_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: InventoryDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq_broker
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # ==========================================
+  # 2. IMAGENS PUBLICADAS NO GHCR (ghcr.io)
+  # ==========================================
+  catalog-api:
+    image: ghcr.io/lucascontee/hardwareset-catalog-api:latest
+    container_name: hardwareset_catalog_api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      MongoDbSettings__ConnectionString: "mongodb://admin:secretpassword@mongodb:27017/"
+      MongoDbSettings__DatabaseName: "CatalogoDb"
+      RabbitMq__Host: "rabbitmq"
+      RabbitMq__Username: "admin"
+      RabbitMq__Password: "password123"
+    ports:
+      - "5188:8080"
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  builder-api:
+    image: ghcr.io/lucascontee/hardwareset-builder-api:latest
+    container_name: hardwareset_builder_api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      CatalogApi__BaseUrl: "http://catalog-api:8080"
+      Redis__ConnectionString: "redis:6379,password=password123,abortConnect=false"
+      Redis__InstanceName: "HardwareSet_Builder_"
+    ports:
+      - "5189:8080"
+    depends_on:
+      - redis
+      - catalog-api
+
+  inventory-api:
+    image: ghcr.io/lucascontee/hardwareset-inventory-api:latest
+    container_name: hardwareset_inventory_api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__InventoryPostgres: "Host=postgres;Port=5432;Database=InventoryDb;Username=admin;Password=password123"
+      RabbitMq__Host: "rabbitmq"
+      RabbitMq__Username: "admin"
+      RabbitMq__Password: "password123"
+    ports:
+      - "5190:8080"
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  order-api:
+    image: ghcr.io/lucascontee/hardwareset-order-api:latest
+    container_name: hardwareset_order_api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__OrderPostgres: "Host=postgres;Port=5432;Database=OrderDb;Username=admin;Password=password123"
+      RabbitMq__Host: "rabbitmq"
+      RabbitMq__Username: "admin"
+      RabbitMq__Password: "password123"
+    ports:
+      - "5191:8080"
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  api-gateway:
+    image: ghcr.io/lucascontee/hardwareset-gateway:latest
+    container_name: hardwareset_gateway
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address: "http://catalog-api:8080"
+      ReverseProxy__Clusters__builder-cluster__Destinations__destination1__Address: "http://builder-api:8080"
+      ReverseProxy__Clusters__inventory-cluster__Destinations__destination1__Address: "http://inventory-api:8080"
+      ReverseProxy__Clusters__orders-cluster__Destinations__destination1__Address: "http://order-api:8080"
+    ports:
+      - "5000:8080"
+    depends_on:
+      - catalog-api
+      - builder-api
+      - inventory-api
+      - order-api
+
+  web:
+    image: ghcr.io/lucascontee/hardwareset-web:latest
+    container_name: hardwareset_web
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+
+volumes:
+  mongodb_data:
+  redis_data:
+  postgres_data:
+  rabbitmq_data:
