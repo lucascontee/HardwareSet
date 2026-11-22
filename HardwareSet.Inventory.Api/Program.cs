@@ -25,7 +25,10 @@ builder.Services.AddMassTransit(bus =>
 
     bus.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        var host = builder.Configuration["RabbitMq:Host"] ?? "localhost";
+        var virtualHost = builder.Configuration["RabbitMq:VirtualHost"] ?? "/";
+
+        cfg.Host(host, virtualHost, h =>
         {
             h.Username(builder.Configuration["RabbitMq:Username"] ?? "admin");
             h.Password(builder.Configuration["RabbitMq:Password"] ?? "password123");

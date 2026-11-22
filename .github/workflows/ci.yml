@@ -208,3 +208,38 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.service.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+  # ==========================================================
+  # 5. DEPLOY CONTÍNUO NO AZURE CONTAINER APPS (Passo 8 - CD)
+  # ==========================================================
+  deploy-azure:
+    name: Deploy ${{ matrix.app }} to Azure Container Apps
+    if: github.event_name != 'pull_request' && vars.AZURE_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    needs:
+      - publish-ghcr
+
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - hardwareset-catalog-api
+          - hardwareset-builder-api
+          - hardwareset-inventory-api
+          - hardwareset-order-api
+          - hardwareset-gateway
+
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update Azure Container App Revision
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az containerapp update \
+              --name ${{ matrix.app }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP || 'rg-hardwareset' }} \
+              --image ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.app }}:latest
